@@ -1,7 +1,0 @@
---- 
-wordpress_id: 44
-layout: post
-title: "Drizzle: A Pretty Cool Project"
-wordpress_url: http://posulliv.com/?p=44
----
-<a href="https://launchpad.net/drizzle">Drizzle</a> is a pretty cool project whose progress I've started following in the last few weeks. I'm trying to contribute in a tiny way if I can by confirming bug reports. If I had more time, I'd like to try resolving some bugs. Hopefully, I'll find some spare time to do that in the future.<br /><br />I think its definitely a project worth keeping an eye on though. Check it out if you have the time.
