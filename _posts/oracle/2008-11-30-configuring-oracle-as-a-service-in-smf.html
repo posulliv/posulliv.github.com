@@ -1,0 +1,197 @@
+--- 
+layout: post
+title: Configuring Oracle as a Service in SMF
+---
+In Solaris 10, Sun introduced the Service Management Facility (SMF) to simplify management of system services. It is a component of the so called Predictive Self Healing technology available in Solaris 10. The other component is the Fault Management Architecture.<br>
+
+In this post, I will demonstrate how to configure an Oracle database and listener as services managed by SMF. This entails that Oracle will start automatically on boot which means we don't need to go to the bother of writing a startup script for Oracle (even though its not really that hard, see Howard Roger's <a href="http://www.dizwell.com/prod/node/235?page=0%2C2">10gR2 installation guide on Solaris</a> for an example). A traditional startup script could still be created and placed appropriate <code>/etc/rc*.d</code> directory. These scripts are referred to as legacy run services in Solaris 10 and will not benefit from the precise fault management provided by SMF.<br>
+
+In this post, I am only talking about a single instance environment and I am not using ASM for storage. Also please note that this post is not an extensive guide on how to do this by any
+means, it's just a short post on how to get it working. For more information on SMF and Solaris 10 in general, have a look through Sun's excellent online documentation at <a href="http://docs.sun.com/">http://docs.sun.com</a>.<br>
+
+<span style="font-weight: bold;">Adding Oracle as a Service</span><br>
+
+To create a new service in SMF, a number of steps need to be performed (see the <a href="http://www.sun.com/bigadmin/content/selfheal/sdev_intro.html">Solaris Service Management Facility - Service Developer Introduction</a> for more details). Luckily for me, Joost Mulders has already done all the necessary work for performing this for Oracle. The package for
+installing ora-smf is available from <a href="http://joostm.nl/solaris/smf/ora-smf/ora-smf-1.5.pkg">here</a>.<br>
+
+To install this package, download it to an appropriate location (in my case, the root user's home directory) and perform the following:<br>
+
+<pre>
+# cd /var/svc/manifest/application
+# mkdir database
+# cd ~
+# pkgadd -d orasmf-1.5.pkg
+</pre>
+
+There is now some configuration which needs to be performed. Navigate to the /var/svc/manifest/application/database directory. The following files will be present there
+
+<pre>
+# ls -l
+-r--r--r--   1 root     bin         2167 Apr 26 09:24 oracle-database-instance.xml
+-r--r--r--   1 root     bin         5722 Dec 28  2005 oracle-database-service.xml
+-r--r--r--   1 root     bin         2128 Apr 26 09:31 oracle-listener-instance.xml
+-r--r--r--   1 root     bin         4295 Dec 28  2005 oracle-listener-service.xml
+#
+</pre>
+
+The two files which must be edited are:
+<ul>
+	<li>oracle-database-instance.xml</li>
+	<li>oracle-listener-instance.xml</li>
+</ul>
+My <code>oracle-database-instance.xml</code> file looked like the following after I edited it according to my environment:
+
+<br>
+<script src="http://gist.github.com/288466.js"></script>
+<br>
+
+and my <code>oracle-listener-instance.xml</code> file looked like so after editing:
+
+<br>
+<script src="http://gist.github.com/288469.js"></script>
+<br>
+
+In the above configuration files, you can see that I have an instance (orcl1) whose ORACLE_HOME is <code>/u01/app/oracle/product/10.2.0/db_1</code>. I also have a resource project named oracle and the username and group which the Oracle software is installed as is oracle and dba respectively. The most important parameters which must be changed according to your environment are:
+
+<ul>
+	<li>ORACLE_HOME</li>
+	<li>ORACLE_SID</li>
+	<li>User</li>
+	<li>Group</li>
+	<li>Project</li>
+	<li>Working Directory (in my case, I set it to the same value as ORACLE_HOME)</li>
+	<li>Instance name (needs to be the same as the ORACLE_SID for the database and the listener name for the listener)</li>
+</ul>
+
+Once these modifications have been performed according to your environment, execute the following to bring the database and listener under SMF control:
+
+<pre>
+# svccfg import /var/svc/manifest/application/database/oracle-database-instance.xml
+# svccfg import /var/svc/manifest/application/database/oracle-listener-instance.xml
+</pre>
+
+Now, shut down the database and listener on the host (since this post presumes you are only configuring one database and listener, it shouldn't be too difficult to configure multiple instances though). Then execute the following to enable the database and listener as an SMF service and start the services:
+
+<pre>
+# svcadm enable svc:/application/oracle/database:orcl1
+# svcadm enable svc:/application/oracle/listener:LISTENER
+</pre>
+
+In the commands above, the database instance is orcl1 and the listener name is LISTENER. Log of this process are available in the /var/svc/log directory.
+
+<pre>
+# cd /var/svc/log
+# ls -ltr application-*
+-rw-r--r--   1 root     root          45 Apr 25 20:15 application-management-webmin:default.log
+-rw-r--r--   1 root     root         120 Apr 25 20:15 application-print-server:default.log
+-rw-r--r--   1 root     root          45 Apr 25 20:15 application-print-ipp-listener:default.log
+-rw-r--r--   1 root     root          75 Apr 25 20:16 application-gdm2-login:default.log
+-rw-r--r--   1 root     root         566 Apr 26 07:07 application-print-cleanup:default.log
+-rw-r--r--   1 root     root         603 Apr 26 07:07 application-font-fc-cache:default.log
+-rw-r--r--   1 root     root        3318 Apr 26 10:45 application-oracle-database:orcl1.log
+-rw-r--r--   1 root     root        6847 Apr 26 10:47 application-oracle-listener:LISTENER.log
+#
+</pre>
+
+<span style="font-weight: bold;">Testing Out SMF</span><br>
+
+Now, to test out some of the functionality of SMF, I'm going to kill the pmon process of the orcl1 database instance. SMF should automatically restart the instance.
+
+<pre>
+# ps -ef | grep pmonoracle  
+5113     1   0 10:19:22 ?           0:01 ora_pmon_orcl1
+# kill -9 5113
+</pre>
+
+Roughly 10 to 20 seconds later, the database came back up. Looking at the <code>application-oracle-database:orcl1.log</code> file, we can see what happened:
+
+<pre>
+[ Apr 26 10:44:52 Stopping because process received fatal signal from outside the service. ]
+[ Apr 26 10:44:52 Executing stop method ("/lib/svc/method/ora-smf stop database orcl1")]
+**********************************************************************
+********************************************************************** 
+some of '^ora_(lgwr|dbw0|smon|pmon|reco|ckpt)_orcl1' died.
+** Aborting instance orcl1.
+*********************************************************************
+*********************************************************************
+ORACLE instance shut down.
+[ Apr 26 10:44:53 Method "stop" exited with status 0 ]
+[ Apr 26 10:44:53 Executing start method ("/lib/svc/method/ora-smf start database orcl1") ]
+ORACLE instance started.
+Total System Global Area  251658240 bytes
+Fixed Size                  1279600 bytes
+Variable Size              83888528 bytes
+Database Buffers          163577856 bytes
+Redo Buffers                2912256 bytes
+Database mounted.
+Database opened.
+database orcl1 is OPEN.
+[ Apr 26 10:45:05 Method "start" exited with status 0 ]
+</pre>
+
+As can be seen from the content of my log file above, SMF discovered that the instance crashed and restarted it automatically. That seems pretty cool to me!<br>
+
+Now, let's try out the same procedure with the listener service.<br>
+
+
+Almost instantaneously, the listener came back up. Looking through the <code>application-oracle-listener:LISTENER.log</code> file shows us what SMF did:
+
+<pre>
+[ Apr 26 10:47:50 Stopping because process received fatal signal from outside the service. ]
+[ Apr 26 10:47:50 Executing stop method ("/lib/svc/method/ora-smf stop listener LISTENER") ]
+
+LSNRCTL for Solaris: Version 10.2.0.2.0 - Production on 26-APR-2007 10:47:51
+
+Copyright (c) 1991, 2005, Oracle.  All rights reserved.
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=solaris01)(PORT=1521)))
+TNS-12541: TNS:no listener
+TNS-12560: TNS:protocol adapter error
+TNS-00511: No listener
+Solaris Error: 146: Connection refused
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=IPC)(KEY=EXTPROC0)))
+TNS-12541: TNS:no listener
+TNS-12560: TNS:protocol adapter error
+TNS-00511: No listener
+Solaris Error: 146: Connection refused
+[ Apr 26 10:47:52 Method "stop" exited with status 0 ]
+[ Apr 26 10:47:52 Executing start method ("/lib/svc/method/ora-smf start listener LISTENER") ]
+
+LSNRCTL for Solaris: Version 10.2.0.2.0 - Production on 26-APR-2007 10:47:52
+
+Copyright (c) 1991, 2005, Oracle.  All rights reserved.
+
+Starting /u01/app/oracle/product/10.2.0/db_1/bin/tnslsnr: please wait...
+
+TNSLSNR for Solaris: Version 10.2.0.2.0 - Production
+System parameter file is /u01/app/oracle/product/10.2.0/db_1/network/admin/listener.ora
+Log messages written to /u01/app/oracle/product/10.2.0/db_1/network/log/listener.log
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=solaris01)(PORT=1521)))
+Listening on: (DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC0)))
+
+Connecting to (DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=solaris01)(PORT=1521)))
+STATUS of the LISTENER
+------------------------
+Alias                     LISTENER
+Version                   TNSLSNR for Solaris: Version 10.2.0.2.0 - Production
+Start Date                26-APR-2007 10:47:54
+Uptime                    0 days 0 hr. 0 min. 0 sec
+Trace Level               off
+Security                  ON: Local OS Authentication
+SNMP                      OFF
+Listener Parameter File   /u01/app/oracle/product/10.2.0/db_1/network/admin/listener.ora
+Listener Log File         /u01/app/oracle/product/10.2.0/db_1/network/log/listener.log
+Listening Endpoints Summary...
+(DESCRIPTION=(ADDRESS=(PROTOCOL=tcp)(HOST=solaris01)(PORT=1521)))
+(DESCRIPTION=(ADDRESS=(PROTOCOL=ipc)(KEY=EXTPROC0)))
+Services Summary...
+Service "PLSExtProc" has 1 instance(s).
+Instance "PLSExtProc", status UNKNOWN, has 1 handler(s) for this service...
+The command completed successfully
+listener LISTENER start succeeded
+[ Apr 26 10:47:54 Method "start" exited with status 0 ]
+</pre>
+
+I havn't really played around too much else with SMF and Oracle at the moment. Obviously, Oracle has a lot of this functionality already available through Enterprise Manager using corrective actions.<br>
+
+Also, its worth pointing out that Oracle does not currently support SMF and does not provide any information or documentation on configuring Oracle with SMF. Metalink Note 398580.1 and Bug 5340239 have more information on this from Oracle.

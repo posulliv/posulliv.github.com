@@ -5,8 +5,8 @@ layout: master
 
 h2. About Padraig 
 
-<span style="margin:0 10px; float:right"><a href="http://posulliv.com/me_other.jpg"
-title="Myself"><img src="http://posulliv.com/me_other.jpg" width="240" height="160" alt="myself" /></a></span>
+<span style="margin:0 10px; float:right">
+<img src="images/me_other.jpg" width="240" height="160" alt="myself" /></span>
 
 I am a software engineer employed at "Akiba Technologies Inc.":http://akibainc.com and I spend a lot of time hacking on Drizzle and other open source projects when I get the chance.
 
