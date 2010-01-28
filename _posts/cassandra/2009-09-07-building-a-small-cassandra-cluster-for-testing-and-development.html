@@ -1,0 +1,362 @@
+--- 
+layout: post
+title: Building a Small Cassandra Cluster for Testing and Development
+---
+For college, I was playing with <a href="http://incubator.apache.org/cassandra/">cassandra</a> and thought I would document my experience in setting up a small cassandra cluster for playing around with. For this article, I actually used virtual machines (3 of them). I am assuming that we have a fresh ubuntu installation on each node. I'm also assuming static IP addresses so the /etc/hosts file on each node will have the following entries (the actual IP addresses and host names can be whatever you like):
+
+<pre>
+192.168.221.138 cass01                  cass01
+192.168.221.139 cass02                  cass02
+192.168.221.140 cass03                  cass03
+</pre>
+
+The process that I follow is to perform all the actions I outline below on one node and before actually starting the cassandra service, I clone the virtual machine as many times as I want. This makes it extremely quick for me to get up and running. I'm not going to go into detail on these issues here as there is plenty of information on these topics elsewhere (which go in to a lot more detail).
+
+<h2>Required Packages</h2>
+Cassandra requires very little to run:
+<ul>
+	<li>Java 1.6</li>
+	<li>Ant</li>
+	<li>svn or git (only if you wish to obtain the latest code from trunk)</li>
+</ul>
+These packages can be installed easily:
+
+<pre>
+$ sudo apt-get install sun-java6-jdk ant git-core
+</pre>
+
+<h2>Create "cassandra" User and Directories</h2>
+The following tasks will be performed on all nodes that we want to be in the cluster (what I do is to perform these actions on just 1 virtual machine and then clone the virtual machine multiple times). We are going to create a user account and group that cassandra will run as.
+
+<pre>
+$ sudo groupadd -g 501 cassandra
+$ sudo useradd -m -u 501 -g cassandra -d /home/cassandra -s /bin/bash \
+> -c "Cassandra Software Owner" cassandra
+$ id cassandra
+uid=1001(cassandra) gid=501(cassandra) groups=501(cassandra)
+$ sudo passwd cassandra
+</pre>
+
+Next, we create directories for storing the software, data, commit logs, and configuration files.
+
+<pre>
+$ sudo mkdir -p /opt/cassandra
+$ sudo mkdir -p /opt/cassandra/source
+$ sudo mkdir -p /opt/cassandra/logs
+$ sudo mkdir -p /opt/cassandra/callouts
+$ sudo mkdir -p /opt/cassandra/bootstrap
+$ sudo mkdir -p /opt/cassandra/staging
+$ sudo mkdir -p /opt/cassandra/conf
+$ sudo mkdir -p /u01/cassandra/data
+$ sudo mkdir -p /u02/cassandra/commitlog
+$ sudo chown -R cassandra:cassandra /opt/cassandra
+$ sudo chown -R cassandra:cassandra /u01/cassandra
+$ sudo chown -R cassandra:cassandra /u02/cassandra
+$ sudo chmod -R 755 /var/cassandra
+$ sudo chmod -R 755 /u01/cassandra
+$ sudo chmod -R 755 /u02/cassandra
+</pre>
+
+Above, we are making an assumption that /u01 and /u02 would be separate disks. Of course, I do not have separate disks but in reality, that the ideal scenario would be to store the commit logs and data on separate disks as alluded to above.  In order to make administration easier, we add the following the cassandra user's .bashrc file (or .bash_profile):
+
+<pre>
+export JAVA_HOME=/usr/lib/jvm/java-6-sun
+
+export CASSANDRA_HOME=/opt/cassandra/source/latest
+export CASSANDRA_INCLUDE=/opt/cassandra/conf/cassandra.in.sh
+export CASSANDRA_CONF=/opt/cassandra/conf
+export CASSANDRA_PATH=$CASSANDRA_HOME/bin
+
+export PATH=$CASSANDRA_PATH:$PATH
+</pre>
+
+Obviously, the various environment variables should be set to whatever is appropriate for your environment if you are deviating from what I am setting up here.
+
+<h2>Download Cassandra</h2>
+download cassandra (we will use git in this article)  There are a number of options for downloading cassandra:
+<ul>
+	<li><a href="http://incubator.apache.org/cassandra/#download">Stable Releases</a></li>
+	<li><a href="http://hudson.zones.apache.org/hudson/job/Cassandra/lastSuccessfulBuild/artifact/cassandra/build/">Nightly Development Snapshots</a></li>
+	<li>Latest Code from trunk</li>
+</ul>
+Running the latest code in trunk is not recommended as it is not a stable release. However, I'm going to use the latest version of the repository (cloned from the git read-only repository) for this article as I'm interested in following the development of cassandra. Thus, I'll use git to retrieve the latest code:
+
+<pre>
+$ su - cassandra
+$ cd /opt/cassandra/source
+$ git clone git://git.apache.org/cassandra.git latest
+</pre>
+
+<h2>Build and Configure Cassandra</h2>
+Now, we need to build the software:
+
+<pre>
+$ su - cassandra
+$ cd $CASSANDRA_HOME
+$ ant
+Buildfile: build.xml
+
+build-subprojects:
+
+init:
+    [mkdir] Created dir: /opt/cassandra/source/latest/build/classes
+    [mkdir] Created dir: /opt/cassandra/source/latest/build/test/classes
+    [mkdir] Created dir: /opt/cassandra/source/latest/src/gen-java
+
+check-gen-cli-grammar:
+
+gen-cli-grammar:
+     [echo] Building Grammar /opt/cassandra/source/latest/src/java/org/apache/cassandra/cli/Cli.g  ....
+
+build-project:
+     [echo] apache-cassandra-incubating: /opt/cassandra/source/latest/build.xml
+    [javac] Compiling 254 source files to /opt/cassandra/source/latest/build/classes
+    [javac] Note: Some input files use or override a deprecated API.
+    [javac] Note: Recompile with -Xlint:deprecation for details.
+    [javac] Note: Some input files use unchecked or unsafe operations.
+    [javac] Note: Recompile with -Xlint:unchecked for details.
+
+build:
+
+BUILD SUCCESSFUL
+Total time: 10 seconds
+$
+</pre>
+
+We would like to be able to keep configuration files out of the main source tree so we copy the sample configuration files provided with the source to a particular configuration directory we maintain for cassandra:
+
+<pre>
+$ cp -R $CASSANDRA_HOME/conf/* $CASSANDRA_CONF
+$ cp $CASSANDRA_HOME/bin/cassandra.in.sh $CASSANDRA_INCLUDE
+$ cd $CASSANDRA_CONF
+$ ls -l
+total 24
+-rw-r--r-- 1 cassandra cassandra  1886 2009-09-05 16:05 cassandra.in.sh
+-rw-r--r-- 1 cassandra cassandra  1664 2009-09-05 14:51 log4j.properties
+-rw-r--r-- 1 cassandra cassandra 13926 2009-09-05 14:51 storage-conf.xml
+$
+</pre>
+
+The cassandra.in.sh file can be used to specify JVM options (such as the maximum heap size). Within the cassandra.in.sh file we copied over, various options can be set but we need to remove the following lines (as we have already defined CASSANDRA_CONF):
+
+<pre>
+# The directory where Cassandra's configs live (required)
+CASSANDRA_CONF=$cassandra_home/conf
+</pre>
+
+The first configuration file which we modify is the storage-conf.xml file. The main portions which we modify are:<br>
+
+<script src="http://gist.github.com/288454.js"></script>
+<br>
+
+The storage-conf.xml configuration file is well commented and provides ample explanation on the various parameters that can be configured. It is worth reading through that file when you are wondering what can be tweaked in cassandra.  Next, we need to configure the logging properties for the system. These properties are specified in the log4j.properties file (again in the $CASSANDRA_CONF directory). The portion to modify is:
+
+<pre>
+# Edit the next line to point to your logs directory
+log4j.appender.R.File=/opt/cassandra/logs/system.log
+</pre>
+
+<h2>Starting/Stopping Cassandra</h2>
+First, lets start cassandra on one node in the foreground to ensure that everything is set up correctly. Open 2 terminal windows and in one of them, start cassandra in the foreground:
+
+<pre>
+$ su - cassandra
+$ cassandra -f
+Listening for transport dt_socket at address: 8888
+DEBUG - Loading settings from /opt/cassandra/conf/storage-conf.xml
+DEBUG - Syncing log with a period of 1000
+DEBUG - opening keyspace Keyspace1
+DEBUG - adding Super1 as 0
+DEBUG - adding Standard2 as 1
+DEBUG - adding Standard1 as 2
+DEBUG - adding StandardByUUID1 as 3
+DEBUG - adding LocationInfo as 4
+DEBUG - adding HintsColumnFamily as 5
+DEBUG - opening keyspace system
+INFO - Saved Token not found. Using 66210133872783152550171468874444798372
+DEBUG - Starting to listen on 127.0.1.1:7001
+DEBUG - Binding thrift service to cass01:9160
+INFO - Cassandra starting up...
+</pre>
+
+Now, in the other terminal window, use the cassandra command-line interface to connect to the instace we started in our other window:
+
+<pre>
+$ su - cassandra
+$ cassandra-cli --host cass01 --port 9160
+Connected to cass01/9160
+Welcome to cassandra CLI.
+
+Type 'help' or '?' for help. Type 'quit' or 'exit' to quit.
+cassandra> help
+List of all CLI commands:
+?                                                      Same as help.
+connect \<hostname>/<port>                              Connect to Cassandra's thrift service.
+describe keyspace <keyspacename>                       Describe keyspace.
+exit                                                   Exit CLI.
+help                                                   Display this help.
+quit                                                   Exit CLI.
+show config file                                       Display contents of config file
+show cluster name                                      Display cluster name.
+show keyspaces                                         Show list of keyspaces.
+show version                                           Show server version.
+get <tbl>.<cf>['<rowKey>']                             Get a slice of columns.
+get <tbl>.<cf>['<rowKey>']['<colKey>']                 Get a column value.
+set <tbl>.<cf>['<rowKey>']['<colKey>'] = '<value>'     Set a column.
+cassandra> show version
+0.4.0
+cassandra> exit
+$
+</pre>
+
+The cassandra script provided in the bin directory can be used to start cassandra but I wanted a script that I could use to easily start/stop a cassandra instance. Here is an extremely simple script we can use to start and stop cassandra that I created:
+
+<pre>
+#!/bin/bash
+#
+# /etc/init.d/cassandra
+#
+# Startup script for Cassandra
+#
+
+export JAVA_HOME=/usr/lib/jvm/java-6-sun
+export CASSANDRA_HOME=/opt/cassandra/source/latest
+export CASSANDRA_INCLUDE=/opt/cassandra/conf/cassandra.in.sh
+export CASSANDRA_CONF=/opt/cassandra/conf
+export CASSANDRA_OWNR=cassandra
+export PATH=$PATH:$CASSANDRA_HOME/bin
+log_file=/opt/cassandra/logs/stdout
+pid_file=/opt/cassandra/logs/pid_file
+
+if [ ! -f $CASSANDRA_HOME/bin/cassandra -o ! -d $CASSANDRA_HOME ]
+then
+    echo "Cassandra startup: cannot start"
+    exit 1
+fi
+
+case "$1" in
+    start)
+        # Cassandra startup
+        echo -n "Starting Cassandra: "
+        su $CASSANDRA_OWNR -c "$CASSANDRA_HOME/bin/cassandra -p $pid_file" > $log_file 2>&1
+        echo "OK"
+        ;;
+    stop)
+        # Cassandra shutdown
+        echo -n "Shutdown Cassandra: "
+        su $CASSANDRA_OWN -c "kill `cat $pid_file`"
+        echo "OK"
+        ;;
+    reload|restart)
+        $0 stop
+        $0 start
+        ;;
+    status)
+        ;;
+    *)
+        echo "Usage: `basename $0` start|stop|restart|reload"
+        exit 1
+esac
+
+exit 0
+</pre>
+
+The above script can be used to ensure that a cassandra service starts and stops automatically on startup/shutdown of our nodes. This might not be what you want but if it is, you would ensure the script is run at startup/shutdown by copying the script to /etc/init.d and doing the following:
+
+<pre>
+$ sudo chmod a+x /etc/init.d/cassandra
+$ cd /etc/init.d
+$ sudo update-rc.d cassandra defaults 99
+update-rc.d: warning: /etc/init.d/cassandra missing LSB information
+update-rc.d: see <http://wiki.debian.org/LSBInitScripts>
+ Adding system startup for /etc/init.d/cassandra ...
+   /etc/rc0.d/K99cassandra -> ../init.d/cassandra
+   /etc/rc1.d/K99cassandra -> ../init.d/cassandra
+   /etc/rc6.d/K99cassandra -> ../init.d/cassandra
+   /etc/rc2.d/S99cassandra -> ../init.d/cassandra
+   /etc/rc3.d/S99cassandra -> ../init.d/cassandra
+   /etc/rc4.d/S99cassandra -> ../init.d/cassandra
+   /etc/rc5.d/S99cassandra -> ../init.d/cassandra
+$
+</pre>
+
+<h2>Adding New Nodes</h2>
+Now that we have 1 node up and running, its time to add more nodes to our cassandra cluster. This is an extremely simple process once the initial node has been set up. Assumming we have performed all the steps listed above on another node (or simply cloned a virtual machine with these steps performed as I am doing), all we need to do is modify the cassandra configuration files on the new nodes. I wish to add 2 new nodes so I will modify the appropriate portion of the storage-conf.xml configuration file to indicate this:
+
+<pre>
+<!--
+ ~ Addresses of hosts that are deemed contact points. Cassandra nodes
+ ~ use this list of hosts to find each other and learn the topology of
+ ~ the ring. You must change this if you are running multiple nodes!
+-->
+<Seeds>
+    <Seed>cass01</Seed>
+    <Seed>cass02</Seed>
+    <Seed>cass03</Seed>
+</Seeds>
+</pre>
+
+Now, lets start the cass02 node in the foreground to see what happens. We would expect to see some indication in the output that knowledge is gained of the other node (in this case cass01) that is available:
+
+<pre>
+$ cassandra -f
+Listening for transport dt_socket at address: 8888
+DEBUG - Loading settings from /opt/cassandra/conf/storage-conf.xml
+DEBUG - Syncing log with a period of 1000
+DEBUG - opening keyspace Keyspace1
+DEBUG - adding Super1 as 0
+DEBUG - adding Standard2 as 1
+DEBUG - adding Standard1 as 2
+DEBUG - adding StandardByUUID1 as 3
+DEBUG - adding LocationInfo as 4
+DEBUG - adding HintsColumnFamily as 5
+DEBUG - opening keyspace system
+INFO - Saved Token not found. Using 107959976695419204492109802329269912484
+DEBUG - Starting to listen on 192.168.221.139:7001
+DEBUG - Binding thrift service to cass02:9160
+INFO - Cassandra starting up...
+INFO - Node 192.168.221.138:7001 has now joined.
+DEBUG - CHANGE IN STATE FOR 192.168.221.138:7001 - has token 65882889577194449649405650603559126735
+</pre>
+
+Ok, now lets start the cassandra service up on cass02 properly using the script I showed earlier. Lets monitor the system log on the initial node we set up (cass01) to see what happens:
+
+<pre> 
+INFO [main] 2009-09-07 02:16:14,851 CassandraDaemon.java (line 142) Cassandra starting up...
+INFO [GMFD:1] 2009-09-07 02:17:36,433 Gossiper.java (line 630) Node 192.168.221.139:7001 has now joined.
+DEBUG [GMFD:1] 2009-09-07 02:17:36,435 StorageService.java (line 441)
+CHANGE IN STATE FOR 192.168.221.139:7001 - has token 107959976695419204492109802329269912484
+</pre>
+
+Next, lets start the cassandra service on another node (cass03) and see what happens in the system logs of the initial node (cass01). Note that the storage-conf.xml file on this new node will require the same modifications as mentioned for the cass02 node (the Seeds directive).
+
+<pre> 
+INFO [GMFD:1] 2009-09-07 02:18:44,827 Gossiper.java (line 630) Node 192.168.221.140:7001 has now joined.
+DEBUG [GMFD:1] 2009-09-07 02:18:44,828 StorageService.java (line 441)
+CHANGE IN STATE FOR 192.168.221.140:7001 - has token 27033316431601492526110603272792929694
+</pre>
+
+Next, we will shutdown the cass03 node and monitor the system logs where we will observe the following:
+
+<pre> 
+INFO [Timer-1] 2009-09-07 02:19:05,960 Gossiper.java (line 234) EndPoint 192.168.221.140:7001 is now dead.
+</pre>
+
+Now, lets start cass03 back up again to see what happens:
+
+<pre> 
+INFO [GMFD:1] 2009-09-07 02:20:30,737 Gossiper.java (line 630) Node 192.168.221.140:7001 has now joined.
+DEBUG [GMFD:1] 2009-09-07 02:20:30,738 StorageService.java (line 441)
+CHANGE IN STATE FOR 192.168.221.140:7001 - has token 27033316431601492526110603272792929694
+DEBUG [GMFD:1] 2009-09-07 02:20:30,738 StorageService.java (line 465)
+Sending hinted data to 192.168.221.140:7000
+DEBUG [HINTED-HANDOFF-POOL:1] 2009-09-07 02:20:30,743
+HintedHandOffManager.java (line 200) Started hinted handoff for endPoint 192.168.221.140
+DEBUG [HINTED-HANDOFF-POOL:1] 2009-09-07 02:20:30,760
+HintedHandOffManager.java (line 235) Finished hinted handoff for endpoint 192.168.221.140
+</pre>
+
+Now all 3 nodes are back in the cluster again. We can see how easy it is to add new nodes. We simply need to inform the new node of some other nodes in the cluster (not necessarily all of them due to the gossip-based membership protocol).
+
+<h2>Conclusion</h2>
+The main reason I wrote this post is because I wanted to document my experiences in setting up a small cassandra cluster for future reference. I'm taking a <a href="http://lagoon.cs.umd.edu/classes/818fall09/">class</a> this semester in distributed systems for fun (since I've satisfied the course requirements for my program) which involves a semester project and one project that I've been toying with in my mind is performing an experimental evaluation of various failure detectors. For example, cassandra uses the phi-accrual failure detector from H<span><span class="a">ayashibara</span></span>et al's <a href="http://ddg.jaist.ac.jp/pub/HDY+04.pdf">paper</a> but there is a multitude of other possible failure detectors that could be used. I'm thinking of implementing and evaluating various failure detectors in real systems such as cassandra and <a href="http://project-voldemort.com/">voldemort</a>. It is one possibility for a project that I've thought of (which I have not ran by the professor yet). I've implemented a different failure detector in cassandra already this week but performing an evaluation of a failure detector is not an easy process (what metrics to use to evaluate a failure detector is itself an interesting question). However, if anyone could think of any other interesting project in distributed systems that might allow me to make a contribution to one of these open-source projects, that would be awesome! Anyway, that's all I've got for now. A really good article to read next is <a href="http://blog.evanweaver.com/articles/2009/07/06/up-and-running-with-cassandra/">this one</a> that goes into some detail on actually using cassandra.
