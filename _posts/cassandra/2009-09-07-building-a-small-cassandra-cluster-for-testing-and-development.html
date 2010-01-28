@@ -281,20 +281,13 @@ $
 </pre>
 
 <h2>Adding New Nodes</h2>
+
 Now that we have 1 node up and running, its time to add more nodes to our cassandra cluster. This is an extremely simple process once the initial node has been set up. Assumming we have performed all the steps listed above on another node (or simply cloned a virtual machine with these steps performed as I am doing), all we need to do is modify the cassandra configuration files on the new nodes. I wish to add 2 new nodes so I will modify the appropriate portion of the storage-conf.xml configuration file to indicate this:
 
-<pre>
-<!--
- ~ Addresses of hosts that are deemed contact points. Cassandra nodes
- ~ use this list of hosts to find each other and learn the topology of
- ~ the ring. You must change this if you are running multiple nodes!
--->
-<Seeds>
-    <Seed>cass01</Seed>
-    <Seed>cass02</Seed>
-    <Seed>cass03</Seed>
-</Seeds>
-</pre>
+<br>
+<script src="http://gist.github.com/288458.js"></script>
+<br>
+
 
 Now, lets start the cass02 node in the foreground to see what happens. We would expect to see some indication in the output that knowledge is gained of the other node (in this case cass01) that is available:
 
