@@ -1,7 +1,7 @@
 ---
 layout: master
 title: Blog
-full_posts: 5
+full_posts: 1
 ---
 
 {% for post in site.posts %}
@@ -14,7 +14,7 @@ full_posts: 5
   </div>
   {% else %}
     {% if forloop.index == page.full_posts %}
-    <h3>Older Posts</h3>
+    <h3>Blog Posts</h3>
     <table class='post-list'>
     {% endif %}
     <tr>
