@@ -1,0 +1,28 @@
+--- 
+layout: post
+title: Query Rewriting Plugin Point for Drizzle
+---
+One of the first tasks in my new position at <a href="http://akibainc.com">Akiban</a> was to create
+a plugin point within Drizzle for query rewriting.
+<br>
+
+Following the lead of other plugin interfaces such as the replication API developed by <a
+href="http://jpipes.com">Jay</a>, I wanted to keep it as simple and easy to understand as possible.
+With that in mind, here is the entire API for a query rewriting plugin:<br>
+
+<script src="http://gist.github.com/301690.js"></script>
+<br>
+
+Thus, all a plugin developer needs to do is implement the rewrite() function within their plugin.
+The query is passed by reference as a std::string so a plugin can do whatever it likes to this
+string and this string will then be passed to the parser in the Drizzle core kernel for parsing.
+<br>
+
+This interface opens up a lot of possibilties for interesting plugins. For example, one could
+develop a plugin to analyze a query for common SQL injection patterns or develop a plugin to rewrite
+a query based on a set of rules.
+<br>
+
+One that I plan on developing for Drizzle over the next few weeks is a rewriting plugin similar to
+the <a href="http://httpd.apache.org/docs/2.0/misc/rewriteguide.html">URL rewriter</a> module in Apache. I hope to be posting about that plugin in a few
+weeks.
