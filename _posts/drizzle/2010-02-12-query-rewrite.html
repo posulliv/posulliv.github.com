@@ -10,11 +10,8 @@ The first decision to make was where to insert a plugin point for a query rewrit
 representation of a query would seem like a natural thing to pass to a query rewriter plugin since
 the plugin would not have to implement its own parser then. However, the parsed representation of a
 query in Drizzle is not the easiest in the world to deal with right now so passing this to a plugin
-would make developing a rewriting plugin quite difficult.
-<br>
-
-Thus, I made the decision to create the plugin point before parsing occurs. The simplified path a query follows
-through Drizzle looks like: 
+would make developing a rewriting plugin quite difficult. Thus, I made the decision to create the
+plugin point before parsing occurs.
 <br>
 
 This means that if a
