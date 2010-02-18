@@ -76,7 +76,7 @@ drizzle>
 
 Before creating the table, lets look at what buckets are associated with my S3 account. I'm going to use the <a href="http://www.s3fox.net/">S3Fox</a> firefox plugin for this (there is multiple other things you could use). Here are the buckets in my S3 account right now:<br>
 
-<a href="http://posulliv.com/wp-content/uploads/2009/11/s3fox.png"><img class="aligncenter size-medium wp-image-209" src="http://posulliv.com/wp-content/uploads/2009/11/s3fox-300x270.png" alt="" width="300" height="270" /></a><br>
+<img class="aligncenter size-medium" src="../../../images/s3fox.png" alt="" width="300" height="270" /><br>
 
 I just have the one bucket for now. Now, I create a table using the S3 engine after specifying my AWS credentials:
 
@@ -92,7 +92,7 @@ drizzle>
 
 and when I look at my buckets in S3, I should see a new bucket representing the new table I created:<br>
 
-<a href="http://posulliv.com/wp-content/uploads/2009/11/s3foxafter.png"><img class="aligncenter size-medium wp-image-212" src="http://posulliv.com/wp-content/uploads/2009/11/s3foxafter-300x270.png" alt="" width="300" height="270" /></a><br>
+<img class="aligncenter size-medium" src="../../../images/s3foxafter.png" alt="" width="300" height="270" /><br>
 
 As can be seen, the bucket name is the database name concatenated with the table name - 'databasetable'. Next, lets insert some rows in the table and then see what objects are in the bucket:
 
@@ -112,7 +112,7 @@ Query OK, 1 row affected (0.14 sec)
 drizzle>
 </pre>
 
-<a href="http://posulliv.com/wp-content/uploads/2009/11/s3foxobjects.png"><img class="aligncenter size-medium wp-image-213" src="http://posulliv.com/wp-content/uploads/2009/11/s3foxobjects-300x270.png" alt="" width="300" height="270" /></a><br>
+<img class="aligncenter size-medium" src="../../../images/s3foxobjects.png" alt="" width="300" height="270" /><br>
 
 Now we can query the table. Queries on the table need to specify a primary key value in the WHERE clause for now so we will just be returning one row (I'll be looking into range queries pretty soon):
 
