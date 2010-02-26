@@ -1,6 +1,6 @@
 --- 
 layout: post
-title: Installing SystemTap on Ubuntu and CentOS
+title: Installing SystemTap on Ubuntu 
 ---
 This year, I'm presnting at the MySQL user's conference. My <a
 href="http://en.oreilly.com/mysql2010/public/schedule/detail/12472">talk</a> is on using SystemTap and DTrace
@@ -10,11 +10,9 @@ developing replication plugins for Drizzle and that should be a lot of fun.
 
 I wanted to write some posts before the conference that I can reference
 within my talk which detail how to install SystemTap and configure Drizzle and MySQL for use with
-SystemTap. Thus, this post is on how to install SystemTap on Ubuntu and CentOS while my next post
+SystemTap. Thus, this post is on how to install SystemTap on Ubuntu while my next post
 will go in to details about how to configure MySQL and Drizzle for use with SystemTap.
 <br>
-
-<h2>Installing SystemTap on Ubuntu</h2>
 
 Before starting, its worth noting that this post is specific to Ubuntu 9.10. The procedure to follow
 may be different on other versions so its worth keeping that in my mind. The first thing we do is
@@ -71,3 +69,6 @@ $ hello world
 $ [1]+ Done
 </pre>
 
+Installing SystemTap on CentOS is significantly easier since it is primarily developed by Red Hat. A
+good article on how to install it on CentOS is available <a
+href="http://sourceware.org/systemtap/wiki/SystemTapOnCentOS">here</a>.
