@@ -1,0 +1,56 @@
+--- 
+layout: post
+title: Schema-Free Drizzle!
+---
+I came across this <a href="http://www.igvita.com/2010/03/01/schema-free-mysql-vs-nosql/">post</a> from 
+<a href="http://www.igvita.com">Ilya Grigorik</a> on <a href="http://news.ycombinator.com/">Hacker News</a> 
+yesterday and I figured I just had to implement this in Drizzle now with the new query rewriting
+interface that I mentioned <a href="http://posulliv.github.com/2010/03/01/query-rewrite.html">yesterday</a>.
+The awesome thing about Drizzle is that I can try all these ideas out easily by just implementing a
+plugin.
+<br>
+
+Any SQL statements we want to use on our schema-free constructs, we have to prefix with the string
+'nos'. With that said, here is a session demonstrating this query rewriting plugin:
+
+<pre>
+Your Drizzle connection id is 2
+Server version: 7 Source distribution (schema-less)
+
+Type 'help;' or '\h' for help. Type '\c' to clear the buffer.
+
+drizzle> use test;
+Database changed
+drizzle> nos create table widgets;
+Query OK, 0 rows affected (0.06 sec)
+
+drizzle> nos insert into widgets (id,name) values ('a', 'apple');
+Query OK, 1 row affected (0.19 sec)
+
+drizzle> nos insert into widgets (id,name,type) values ('b', 'blackberry', 'phone');
+Query OK, 1 row affected (0.21 sec)
+
+drizzle> nos select * from widgets;
++------+------------+-------+
+| id   | name       | type  |
++------+------------+-------+
+| a    | apple      | NULL  | 
+| b    | blackberry | phone | 
++------+------------+-------+
+2 rows in set (0 sec)
+
+drizzle> nos select * from widgets where id = 'a';
++------+-------+------+
+| id   | name  | type |
++------+-------+------+
+| a    | apple | NULL | 
++------+-------+------+
+1 row in set (0 sec)
+
+drizzle>
+</pre>
+<br>
+
+The code for this is available on Launchpad (lp:~posulliv/drizzle/schema-less). I threw this
+together in a few hours today for fun so it is what it is. 
+
