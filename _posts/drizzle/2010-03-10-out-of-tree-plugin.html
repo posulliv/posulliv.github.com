@@ -93,7 +93,10 @@ make[1]: Leaving directory `/home/posulliv/repos/drizzle/mc-stats-plugin'
 $
 </pre>
 
-Now, our plugin is built. To install it, we simply do a make install. I just think this process
+Now, our plugin is built. To install it, we simply do a make install and give the
+--plugin_add=memcached_stats option to drizzled when we start the server.<br>
+
+I just think this process
 makes my life a whole lot easier and I wanted to bring some attention to how easy drizzle makes
 developing plugins.
 
