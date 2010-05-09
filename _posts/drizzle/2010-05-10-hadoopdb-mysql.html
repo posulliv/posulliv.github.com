@@ -279,7 +279,10 @@ mysql> create table grep (
 load data local infile 'my_file' into table grep fields terminated by '|' (key1, field);
 </pre>
 
-We now have data loaded into both HDFS and MySQL. 
+We now have data loaded into both HDFS and MySQL. The data we are working with is from the grep
+benchmark which is not the best benchmark for HadoopDB since it is un-structured data. However,
+since this article is just about how to setup HadoopDB and not testing its preformance, I didn't
+really worry about that much.
 
 <h2>HadoopDB Catalog and Running a Job</h2>
 
