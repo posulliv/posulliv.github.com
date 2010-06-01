@@ -126,6 +126,7 @@ Launchpad</a>. To download and compile the plugin, perform the following:
 <pre>
 bzr branch lp:~posulliv/drizzle/rep-cassandra
 cd rep-cassandra
+export CXXFLAGS=-I/usr/local/include/thrift
 ./config/autorun.sh
 ./configure --with-cassandra-applier-plugin
 make
