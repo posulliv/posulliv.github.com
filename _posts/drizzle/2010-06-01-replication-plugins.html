@@ -1,0 +1,234 @@
+--- 
+layout: post
+title: Simple Drizzle Replication Plugin for Cassandra
+---
+This week, I'm giving a talk at <a href="http://opensourcebridge.org">Open Source Bridge</a> in Portland on 
+developing replication plugins for Drizzle. This talk will be based on the <a href="">tutorial</a> that
+<a href="http://joinfu.com">Jay</a> and I gave at the MySQL User's Conference this year. What I want to
+cover in this article is the process of creating a simple replication plugin that simply applies the 
+replication events that occur in Drizzle to <a href="http://cassandra.apache.org/">Cassandra</a>.
+<br>
+
+Lots of the material in this article is directly due to input from Jay and in particular from
+the <a href="http://joinfu.com/presentations/drizzle-replication-plugins/drizzle-replication-plugins.pdf/">presentation</a> 
+Jay put together for our tutorial in April.
+<br>
+
+<h2>Drizzle Architecture & Replication Basics</h2>
+
+As is pretty well known at this stage, Drizzle follows a micro-kernel design. Essentially, this means that
+most features are built as plugins. For example, in Drizzle, authentication, logging, storage engines, etc.
+are provided as plugins. The kernel is meant to be extremely small in size and provides the basic 
+functionality a database server requires such as a parser, query optimizer, and query executor.
+<br>
+
+Replication in Drizzle is entirely row-based with the kernel being the marshall of all sources and targets of 
+replicated data. The kernel constructs objects that represent changes made in the server. The objects 
+constructed are of type <code>message::Transaction</code> and the kernel pushes these constructed objects
+out to replication streams (a replication stream in Drizzle is a pairing of a replicator and an
+applier).
+<br>
+
+The Transaction message in Drizzle is the basic unit of work in the replication system which represents a
+set of changes that were made. We use <a href="http://code.google.com/p/protobuf/">Google Protocol
+Buffers</a> for representing these messages. The GPB definition for the Transaction message is contained
+within the <code>drizzled/message/transaction.proto</code> file within the Drizzle source tree. Jay has
+<a href="http://www.joinfu.com/2009/10/drizzle-replication-changes-in-api-to-support-group-commit/">
+previously</a> gone into great detail on the GPB message definitions and I see no point in duplicating the
+great articles Jay has written so I encourage you to read those if you are interested in knowing more about
+the GPB message definitions.
+
+<h2>Creating a Simple Cassandra Applier</h2>
+
+Mainly, what I wanted to do in this article is to go through a simple example to demonstrate the replication
+API. Please note that the plugin I'm going to cover for this example is extremely simple and probably
+not very useful. Its main purpose is to serve as an example of how to develop a transaction applier plugin
+that can apply transactions to a difference database system; in this case Cassandra.
+<br>
+
+Our Cassandra applier depends on 2 third-party libraries: 1) <a href="http://incubator.apache.org/thrift">
+thrift</a> and 2)<a href="http://github.com/posulliv/libcassandra">libcassandra</a>. libcassandra is
+a C++ wrapper for the thrift interface to Cassandra that I developed a few months ago to make it easier
+for me to play with Cassandra when programming in C++. Its not very well tested but suits my purposes just
+fine. 
+<br>
+
+Given that our plugin depends on some third-party libraries, my <code>plugin.ini</code> file will look like:
+
+<br>
+<script src="http://gist.github.com/420592.js"></script>
+<br>
+
+And my <code>plugin.ac</code> file will look like:
+
+<br>
+<script src="http://gist.github.com/420594.js"></script>
+<br>
+
+This takes care of my plugin's dependence on third-party libraries during the compilation process. If these
+libraries are not present on the system when I compile Drizzle, then this plugin will not be compiled. 
+<br>
+
+As mentioned before, the plugin I am developing is a transaction applier. This means the plugin will be
+implementing the <code>plugin::TransactionApplier</code> interface. The main function a plugin implementing
+this interface needs to implement is the apply function:
+
+The header file for the CassandraApplier class is defined in a new header file named <code>cassandra_applier.h</code>
+which contains the class declaration that looks like:
+
+<br>
+<script src="http://gist.github.com/420596.js"></script>
+<br>
+
+The implementation is contained within the <code>cassandra_applier.cc</code> C++ file. The most interesting function in
+this file is the plugin's implementation of the <code>apply()</code> function. In the case of the 
+CassandraApplier, this function looks like:
+
+<br>
+<script src="http://gist.github.com/420597.js"></script>
+<br>
+
+One thing worth mentioned about the above function before delving into its details is that we assume
+that there is 1 keyspace within Cassandra that we will replicating into. If this keyspace, is not present,
+the function will fail. This is mainly because this allowed me to develop this plugin pretty quickly. There
+is really no other reason for that. In reality, a more robust plugin would allow the keyspace to be 
+configurable. Personally, I would prefer to have a way to specify the keyspace a statement should be 
+replicated into specified in the SQL statement so it could be controlled on a per-statement basis. Not a 
+major issue but I wanted to point this out in case anyone was wondering.
+<br>
+
+Now, the above function first looks at the Transaction message and determines how many Statement messages
+are contained within it. Next, we loop through all the Statement messages contained within the Transaction
+message. Depending on the type of the Statement message, we perform a different action. Right now, the 
+plugin only cares about 3 types of Statements: INSERT, UPDATE, and DELETE.
+<br>
+
+However, the action performed for each action is virtualy identical. First the header for that type is
+obtained. Next, the table metadata and actual data for the Statement is obtained. We then loop through
+each field affected by this Statement. 
+<br>
+
+For example, with an INSERT Statement, we loop through each
+field affected by the INSERT and obtain the field metadata for that field. We use this to obtain the key
+that will be used for insertion in Cassandra. For this simple plugin, the key used by Cassandra is the
+primary key of a table. The name of the field is used as a column name in Cassnadra and the value being
+inserted for that field is used as the value for that column. The name of the table on which the INSERT
+is happening corresponds to a column family name in Cassandra.
+<br>
+
+The initialization function for this plugin is pretty straightforward. We allocate memory for a 
+CassandraApplier object and add that object the plugin registry:
+
+All the above files I referenced are placed in a directory named cassandra_applier I created in the plugin
+directory in the <code>lp:~posulliv/drizzle/rep-cassandra</code> branch on <a href="http://launchpad.net/drzzle">
+Launchpad</a>. To download and compile the plugin, perform the following:
+
+<pre>
+bzr branch lp:~posulliv/drizzle/rep-cassandra
+cd rep-cassandra
+./config/autorun.sh
+./configure --with-cassandra-applier-plugin
+make
+</pre>
+
+If any of the third-part libraries required by the plugin are absent, you will see a message informing you
+of that during the configure stage.
+<br>
+
+In order to start a Drizzle server from the above branch with the appropriate plugins loaded, I perform
+the following:
+
+<pre>
+mkdir run
+cd run
+../drizzled/drizzled --basedir=$PWD \
+--datadir=$PWD \
+--plugin_add=default_replicator,cassandra_applier \
+>> $PWD/drizzle.err 2>&1
+</pre>
+
+To make sure the correct replication stream is enbabled within Drizzle, I can query the data dictionary 
+table Jay created for this purpose:
+
+<pre>
+drizzle> select * from data_dictionary.replication_streams;
++--------------------+-------------------+
+| REPLICATOR         | APPLIER           |
++--------------------+-------------------+
+| default_replicator | cassandra_applier | 
++--------------------+-------------------+
+1 row in set (0 sec)
+
+drizzle> 
+</pre>
+
+Next I'll start up my Cassandra cluster that the applier plugin will work with.
+
+For reference, I'm using Cassandra 0.7 and the Cassandra cluster I used for this article is configured as follows (the 
+<code>cassandra.yaml</code> file):
+
+<br>
+<script src="http://gist.github.com/420601.js"></script>
+<br>
+
+Now, to see the plugin in action, consider the following table in Drizzle:
+
+<pre>
+drizzle> create table padraig
+    -> (
+    ->   a int,
+    ->   b varchar(128),
+    ->   c varchar(128),
+    ->   primary key(a)
+    -> );
+Query OK, 0 rows affected (0.07 sec)
+
+drizzle> 
+</pre>
+
+And assume we perform the following INSERT statements on the table:
+
+<pre>
+drizzle> insert into padraig (a, b) values (1, 'sarah');
+Query OK, 1 row affected (0.16 sec)
+
+drizzle> insert into padraig (a, c) values (2, 'nimbus');
+Query OK, 1 row affected (0.15 sec)
+
+drizzle> insert into padraig (a, b, c) values (3, 'domhnall', 'tomas');
+Query OK, 1 row affected (0.15 sec)
+
+drizzle> 
+</pre>
+
+Now, to see what was inserted in Cassandra, we will use the Cassandra CLI interface:
+
+<pre>
+$ ./bin/cassandra-cli 
+Welcome to cassandra CLI.
+
+Type 'help' or '?' for help. Type 'quit' or 'exit' to quit.
+[default@unknown] connect localhost/9160
+Connected to: "Drizzle Example Cluster" on localhost/9160
+[default@unknown] use drizzle;
+Authenticated to keyspace: drizzle
+[default@drizzle] get padraig['1']
+=> (column=61, value=sarah, timestamp=1275376031524000)
+Returned 1 results.
+[default@drizzle] get padraig['2'] 
+=> (column=62, value=nimbus, timestamp=1275376057537000)
+Returned 1 results.
+[default@drizzle] get padraig['3']                  
+=> (column=62, value=domhnall, timestamp=1275376211981000)
+=> (column=61, value=tomas, timestamp=1275376067097000)
+Returned 2 results.
+[default@drizzle] quit
+$
+</pre>
+
+<br>
+<h2>Conclusions</h2>
+
+That's about it for this article on Drizzle replication. If interested in more, feel free to ping the Drizzle
+mailing list with questions or comments. Parts of replication are still under active development and I know
+Jay loves to get feedback from people on the replication API in Drizzle.
