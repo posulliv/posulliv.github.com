@@ -1,0 +1,313 @@
+--- 
+layout: post
+title: SQL Injection Prevention in Drizzle
+---
+<p>
+SQL injection attacks occur frequently nowadays. While attacks of this nature are completely avoidable when safe programming techniques are used, they still occur in practice. 
+</p>
+
+<p>
+With this in mind, I developed a plugin for Drizzle named STAD that utilizes the <a href="http://posulliv.github.com/2010/03/01/query-rewrite.html">query rewriting plugin interface</a> to prevent SQL injection attacks. The target use case for this plugin is a hosted environment where applications being developed are independent of the database layer i.e. a DBA can not control how a developer chooses to develop their application. Also, I mainly did this as a side-project to demonstrate a use-case for the query rewriting API.
+</p>
+
+<h2>Overview</h2>
+
+<p>
+STAD is a practical protection mechanism that applies the concept of instruction-set randomization to SQL: the SQL standard keywords are modified by appending a random key to them, one that an attacker cannot easily guess. Queries injected by an attacker into a randomized query will be caught since they will not contain the randomization key. The plugin will then just execute a harmless query (for now it is 'SELECT 1') instead of returning any error information to a potential attacker. The security of this approach is dependent on attackers not being able to discover the randomization key. If the key is exposed to an attacker, they will have the ability to inject SQL with the appropriate key appended to keywords.
+</p>
+
+<p>
+This solution was first developed in the research paper <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.10.4549">'SQLrand: Preventing SQL Injection Attacks'</a>. In their implementation of the idea, a proxy was developed that sat between the application and the database server. Thus, while it was a database independent solution, the overhead of the proxy layer and the introduction of a new component made it impractical.
+</p>
+
+<p>
+In drizzle, this funtionality is enabled through the query rewriting API. When the plugin is loaded and a randomization key is specified, all queries issued against the database must contain the correct randomization key or they will not execute correctly. A version of the drizzle command line client comes with the plugin that automatically appends the correct randomization key to SQL keywords. When the plugin is loaded and a randomization key is specified, an administrator is encouraged to use this version of the drizzle command line client.
+</p>
+
+<p>
+To get an idea of how the plugin works, I created a simple diagram to illustrate the steps involved in executing a query when the plugin is enabled. 
+</p>
+
+<img src="../../../images/stad_arch.jpg" width=750 />
+
+<p>
+In step (1) in the diagram above, a client driver (in this case ruby which I will link to later) establishes a connection with the server and asks the STAD plugin for the current randomization key. In step (2), this key is returned to the driver (right now it is transferred as plaintext) and stored there for the duration of the connection.
+</p>
+
+<p>
+In step (3), an application issues a query which goes through a client driver. This client driver randomizes the query using the randomization key obtained from the STAD plugin in step (2). It is this randomized query that is submitted to the server in step (4). Step (5) occurs before the query is parsed by the drizzle kernel. The STAD plugin de-randomizes the query and if all SQL keywords were randomized with the correct randomization key, it passes the correct query onto the drizzle query execution engine in step (6).
+</p>
+
+<p>
+Steps (7) and (8) are simply the returning of a result set to the client driver and application sitting above it.
+</p>
+
+<h2>Attack Examples</h2>
+
+<p>
+In the survey paper <a href="http://www-rcf.usc.edu/~halfond/papers/halfond06issse.pdf">'A Classification of SQL Injection Attacks and Countermeasures'</a>, the authors described a number of SQL injection attack types. I'm going to go through a few of these attack types and the examples from the paper and how the STAD plugin can prevent them. For the attack types and examples that go along with them, it assumed that the application is badly written and dynmically builds a SQL query based on user input without any validation of the input data. The query that will be constructed is:
+</p>
+
+<pre>
+SELECT accounts FROM users WHERE login='name' AND pass='pass' AND pin=pinno
+</pre>
+
+<p>
+The login, pass, and pin conditions in the WHERE clause are obtained from user input.
+</p>
+
+<h3>Tautologies</h3>
+
+<p>
+The general goal of a tautology-based attack is to inject code in one or more conditional statements so that they always evaluate to true. The consequences of this attack depend on how the results of the query are used within the application.
+</p>
+
+<p>
+This attack type has three main goals:
+</p>
+
+<ol>
+  <li>bypass authentication</li>
+  <li>identify injectable parameters</li>
+  <li>extract data</li>
+</ol>
+
+<p>
+An example of this attack would be:
+</p>
+
+<pre>
+SELECT accounts FROM users WHERE login='' OR 1=1 -- AND pass='' AND pin=
+</pre>
+
+<p>
+In this example, an attacker has injected a conditional (OR 1=1) that transforms the entire WHERE clause into a tautology and so every row in the users table will be returned.
+</p>
+
+<p>
+This attack would be prevented using our approach. Assume for a moment that the randomization key is the string '1234'. In this case, the query issued to the drizzle server would look like:
+</p>
+
+<pre>
+SELECT1234 accounts FROM1234 users WHERE1234 login='' OR 1=1 -- AND1234 pass='' AND1234 pin=
+</pre>
+
+<p>
+In this case, the query would not be de-randomized correctly. The STAD plugin would see that the OR keyword has not been randomized with the correct randomization key. Thus, the plugin would detect spurious input and never issue this query against the database.
+</p>
+
+<h3>UNION Query</h3>
+
+<p>
+In union-query attacks, an attacker exploits a vulnerable parameter to change the data set returned for a given query.
+</p>
+
+<p>
+The goals of this attack type are:
+</p>
+
+<ol>
+  <li>bypass authentication</li>
+  <li>extract data</li>
+</ol>
+
+<p>
+With this attack, an attacker can trick the application into returning data from a table different than the one intended by the developer. 
+</p>
+
+<p>
+For example, assume there is another table named creditcards in the same schema as the users table. In that case, an attacker could construct a query like:
+</p>
+
+<pre>
+SELECT accounts FROM users WHERE login = ''
+UNION
+SELECT card_no FROM creditcards WHERE account_num = 4747 -- AND pass = '' AND pin=
+</pre>
+
+<p>
+The original query returns an empty set but the second query returns data from the creditcards table if the given account number exists. The result of this depends on the application but it is possible an attacker could exploit this.
+</p>
+
+<p>
+With our plugin, this query would look like:
+</p>
+
+<pre>
+SELECT1234 accounts FROM1234 users WHERE1234 login = ''
+UNION
+SELECT card_no FROM creditcards WHERE account_num = 4747 -- AND1234 pass = '' AND1234 pin=
+</pre>
+
+<p>
+As in the tautology attack, this query would never be issued since not all keywords in the query have been randomized with the correct randomization key.
+</p>
+
+<h3>Piggy-Backed Queries</h3>
+
+<p>
+Here, an attacker attempts to inject additional queries into the original query. In this case, an attacker is not trying to modify the original query; instead they are attempting to include new and distinct queries that "piggy-back" on the original query (think <a href="http://xkcd.com/327/">little-bobby tables</a>).
+</p>
+
+<p>
+The goals of this attack type are:
+</p>
+
+<ol>
+  <li>extract data</li>
+  <li>add or modify data</li>
+  <li>perform denial of service</li>
+  <li>execute remote commands</li>
+</ol>
+
+<p>
+The database will receive multiple queries when an attack of this type is launched. If successful, an attacker could insert virtually any type of SQL command into the additional queries issued after the original query.
+</p>
+
+<p>
+An example of this attack would be:
+</p>
+
+<pre>
+SELECT accounts FROM users WHERE login = 'bob' AND pass = ''; DROP TABLE users; -- ' AND pin = 1941;
+</pre>
+
+<p>
+The above attack has the DROP TABLE statement piggy-backed onto the original query. It would drop the users table. Our approach would prevent this plugin a similar way to the previous 2 attack types. The injectde commands would not have been radomized with the correct randomization key and so would be rejected by our plugin. In this case, the first query would be issued but the DROP TABLE statement would never be executed.
+</p>
+
+<h2>Overheads of Our Approach</h2>
+
+<p>
+One question that pops up when using a plugin like this would be what kind of overheads are associated with it. One experiment I performed to measure the overhead of the plugin was to use the oltp test in sysbench at various concurrency levels with the plugin both enabled and disabled. The results for this experiment are shown below:
+</p>
+
+<img src="../../../images/sysbench_raw_numbers.png" />
+
+<p>
+Its worth noting that this experiment was run on my local laptop so the actual transaction per second numbers are not interesting. All I'm looking to see is what kind of dip in transactions per second I see when the plugin is enabled. We can see that there is definitely a hit taken when the plugin is enabled with the reduction in transactions per second being about 10% across the board.
+</p>
+
+<h2>Installation and Usage</h2>
+
+<p>
+The <a href="http://github.com/posulliv/stad">STAD plugin</a> is maintained on github as a purely out-of-tree drizzle plugin. To download the source, either git or wget can be used:
+</p>
+
+<pre>
+wget https://github.com/posulliv/stad/tarball/master
+git clone git://github.com/posulliv/stad.git
+</pre>
+
+<p>
+To build and install the plugin, the following is performed:
+</p>
+
+<pre>
+./config/autorun.sh
+./configure --includedir=/path/to/drizzle/root/include --with-libdrizzle-prefix=/path/to/drizzle/root --prefix=/path/to/drizzle/root
+make
+make install
+</pre>
+
+<p>
+The above assumes you have drizzle installed somewhere on your system. You just need to point the configure script to that location so it can find the header files it needs.
+</p>
+
+<p>
+When starting the drizzled daemon, we need to inform it about the new plugin that we want to load since the plugin is not loaded by default. The extra parameter to pass to drizzled is --plugin-add (this loads the default list of plugins in addition to any plugins given as a parameter) so my drizzled command in my startup script looks like:
+</p>
+
+<pre>
+start_daemon -p "$PIDFILE" "$DAEMON --chuid $DRIZZLE_USER"  "--datadir=$DATADIR" "--plugin-add=stad"> $LOG 2>&1 &
+</pre>
+
+<p>
+To verify the plugin is loaded correctly, we can query the MODULES table in the DATA_DICTIONARY schema:
+</p>
+
+<pre>
+drizzle> select module_author, module_license, module_version
+    -> from data_dictionary.modules
+    -> where module_name = 'stad';
++----------------------+----------------+----------------+
+| module_author        | module_license | module_version |
++----------------------+----------------+----------------+
+| "Padraig O Sullivan" | GPL            | "0.2"          | 
++----------------------+----------------+----------------+
+1 row in set (0 sec)
+
+drizzle> 
+</pre>
+
+<p>
+Once the plugin is installed, we can use a ruby client for drizzle I've been working with in my spare time. This <a href="http://github.com/posulliv/drizzle-ruby">ruby client</a> is on github as well and it can either be retrieved using git or a tarball can be pulled:
+</p>
+
+<pre>
+wget https://github.com/posulliv/drizzle-ruby/tarball/master
+git clone git://github.com/posulliv/drizzle-ruby.git
+</pre>
+
+<p>
+Then to install the client, its simply:
+</p>
+
+<pre>
+sudo rake install
+</pre>
+
+<p>
+Once the ruby client is installed, we can begin to use it in an application. A simple example of using it is:
+</p>
+
+<script src="http://gist.github.com/717571.js"></script>
+
+<p>
+The above does nothing interesting but highlights a few interesting points. The client decides whether or not to use SQL randomization for a query based on the connection options given when creating a new connection to the database. Creating the connection object in the example above corresponds directly to steps (1) and (2) in the overview diagram we gave at the beginning of this article. 
+</p>
+
+<p>
+To issue a query that will be randomized, we must first specify a randomization key to the STAD plugin. Right now, this is done using a global variable so anyone who can connect to your drizzle database and view global variables can see what randomization key is being used. To set the randomization key to '1234', its simply:
+</p>
+
+<pre>
+drizzle> set global stad_key = '1234';
+Query OK, 0 rows affected (0 sec)
+
+drizzle>
+</pre>
+
+<p>
+After setting the randomization key, every query that issued against the database will now need to be randomized. This obviously becomes a problem if you need to issue queries through the command line client! The solution I use for now is to provide a version of the drizzle CLI named stadclient that takes the randomization key as a parameter. This binary will be installed in the bin directory under your drizzle root when you install the STAD plugin. We invoke it and can issue regular queries again through the CLI:
+</p>
+
+<pre>
+$ stadclient -k 1234
+
+drizzle> select * from data_dictionary.global_variables where variable_name = 'stad_key'; 
++---------------+----------------+
+| VARIABLE_NAME | VARIABLE_VALUE |
++---------------+----------------+
+| stad_key      | 1234           | 
++---------------+----------------+
+1 row in set (0 sec)
+
+drizzle>
+</pre>
+
+<p>
+Getting back to the ruby client, queries are issued against drizzle and randomized automatically by the ruby client. The code to issue a query against the server is:
+</p>
+
+<script src="http://gist.github.com/727914.js"></script>
+
+<p>
+Line 11 in the above code encapsulates steps (3) through (7) in the overview diagram at the beginning of this article. Line 12 actually returns the results to the application and corresponds to step (8) in the diagram.
+</p>
+
+<h2>Conclusions</h2>
+
+<p>
+STAD is a practical protection mechanism against SQL injection attacks. It has relatively low overheads and when used through the ruby client interface I developed, it becomes quite simple to use in a client application with minimal modification. Of course, SQL injection attacks are completely preventable using good programming practices but I believe this plugin provides an extra layer of security in environments where a DBA cannot control how a developer chooses to sanitize their input.
+</p>
