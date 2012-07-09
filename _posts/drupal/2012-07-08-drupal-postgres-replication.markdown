@@ -1,6 +1,7 @@
 --- 
 title: Configuring Drupal 7.x With PostgreSQL Replication
 layout: post
+category: drupal
 ---
 
 One of the new features in Drupal 7 is that it supports sending queries to
