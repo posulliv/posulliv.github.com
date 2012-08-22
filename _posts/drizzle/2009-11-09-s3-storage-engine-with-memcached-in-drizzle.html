@@ -1,6 +1,7 @@
 --- 
 layout: post
 title: S3 Storage Engine with Memcached in Drizzle
+category: drizzle
 ---
 Previously, I had ported Brian's <a href="http://tangent.org/506/memcache_engine.html">memcached engine</a> to Drizzle and rencently, I've been doing some work with Amazon's S3 for school. Thus, I decided to have a look at Mark's <a href="http://fallenpegasus.com/code/mysql-awss3/">S3 storage engine</a> for MySQL. Over the last 2 days, I created a new version of the S3 storage engine for Drizzle with the option to use <a href="http://memcached.org/">Memcached</a> as a write-through cache for the S3 backend store. I see this work more as showing the cool things we can do in Drizzle and how quickly we can get prototypes up and running. I don't even know if this is a good idea or anything but its cool to be able to store all data in S3.<br>
 

@@ -1,6 +1,7 @@
 --- 
 layout: post
 title: Connection Handling in Drizzle
+category: drizzle
 ---
 A few weeks ago I was reading the paper <a href="http://db.cs.berkeley.edu/papers/fntdb07-architecture.pdf" target="_blank">Anatomy of a Database System</a> by Hellerstein and Stonebraker. Chapter 2 of that paper discusses process models in database systems. After reading that paper, I was interested in seeing what Drizzle does in this regard so I began looking at the source code to see. Essentially, Drizzle uses the thread per DBMS worker model that is outlined in the paper where a single multi-threaded process hosts all the DBMS worker activity. Drizzle also has the concept of a pool of threads where workers are miltiplexed over a thread pool. The really nice thing about Drizzle in this regard is that the code for implementing the pool of threads is a plugin so if anyone is interested in writing their own thread scheduler, they can simply write a plugin for it. While developing an efficient scheduler might be a challenge, the mechanism for writing a plugin is pretty easy. I think that's pretty cool.<br>
 

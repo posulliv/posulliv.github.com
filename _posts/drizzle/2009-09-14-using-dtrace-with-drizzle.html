@@ -1,6 +1,7 @@
 --- 
 layout: post
 title: Using DTrace with Drizzle
+category: drizzle
 ---
 <p>Over the weekend, I was reading about the DTrace support in MySQL and realized that the DTrace support in drizzle needed to be updated. Thus, I created a branch and went to work on porting the latest probes from MySQL 6.0 to drizzle. I proposed a branch for merging into trunk which contains most of the relevant static probes along with some small build fixes to ensure that the probes are correctly enabled. Hopefully, this branch will get merged in the next week or two. In this post, I'm going to give some really simple examples of using the static probes in drizzle along with pointers to various places where lots more information can be obtained on using dtrace (mostly with MySQL but it all applies to drizzle too really).</p>
 

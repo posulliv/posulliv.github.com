@@ -1,6 +1,7 @@
 --- 
 layout: post
 title: Developing a Replicator Plugin for Drizzle
+category: drizzle
 ---
 Recently, I started working on a plugin that performs direct to Memcached replication in Drizzle. While working on this, I found that I wanted to be able to filter replication events based on schema or table names. I went ahead and implemented this in my Memcached plugin but then realized that this functionality would be better off as its own plugin as I imagine filtering of replication events will be a pretty common task people will want to perform. This led me to start working on a filtered replicator plugin for Drizzle. Before diving in to the plugin implementation, I should mention that <a href="http://www.jpipes.com/">Jay Pipes</a> has previously <a href="http://www.jpipes.com/index.php?/archives/290-Towards-a-New-Modular-Replication-Architecture.html">written in significant detail</a> on the replication architecture in Drizzle. I recommend reading that post from Jay if you are not familiar with replication in Drizzle before proceeding with this post.<br>
 
