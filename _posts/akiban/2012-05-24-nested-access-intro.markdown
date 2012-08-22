@@ -1,6 +1,7 @@
 --- 
 title: How Akiban Saves Babies
 layout: post
+category: akiban
 ---
 
 I came across an interesting article from Iggy Fernandez in the NoCOUG journal
