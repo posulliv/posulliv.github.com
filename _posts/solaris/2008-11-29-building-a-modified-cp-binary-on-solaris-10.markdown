@@ -2,7 +2,7 @@
 wordpress_id: 36
 layout: post
 title: Building a Modified cp Binary on Solaris 10
-wordpress_url: http://posulliv.com/?p=36
+category: solaris
 ---
 I thought I would write a post on how I setup my Solaris 10 system to build an improved version of the stock cp(1) utility that comes with Solaris 10 in case anyone arrives here from Kevin Closson's blog. If you are looking for more background information on why I am performing this modification, have a look at <a href="http://kevinclosson.wordpress.com/2007/02/23/standard-file-utilities-with-direct-io/">this post</a> by Kevin Closson.
 

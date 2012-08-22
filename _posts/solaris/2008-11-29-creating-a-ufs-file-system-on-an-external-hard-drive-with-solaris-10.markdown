@@ -2,7 +2,7 @@
 wordpress_id: 34
 layout: post
 title: Creating a UFS File System on an External Hard Drive with Solaris 10
-wordpress_url: http://posulliv.com/?p=34
+category: solaris
 ---
 Recently, I wanted to create a UFS file system on a Maxtor OneTouch II external hard drive I have. I wanted to use the external hard drive for storing some large files and I was going to use the drive exclusively with one of my Solaris systems. Now, I didn't find much information on the web about how to perform this with Solaris (maybe I wasn't searching very well or something) so I thought I would post the procedure I followed here so I'll know how to do it again if I need to.
 

@@ -2,7 +2,7 @@
 wordpress_id: 31
 layout: post
 title: Installing &amp; Configuring a USB NIC on Solaris
-wordpress_url: http://posulliv.com/?p=31
+category: solaris
 ---
 In this post, I will provide a very quick overview of how to install and configure a USB network interface on Solaris.
 
