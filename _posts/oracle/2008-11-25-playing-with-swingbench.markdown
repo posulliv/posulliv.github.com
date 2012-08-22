@@ -2,7 +2,7 @@
 wordpress_id: 33
 layout: post
 title: Playing with Swingbench
-wordpress_url: http://posulliv.com/?p=33
+category: oracle
 ---
 <a href="http://www.dominicgiles.com/swingbench.html">Swingbench</a> is a free load generator (and benchmarks generator) designed by <a href="http://www.dominicgiles.com/index.html">Dominic Giles</a> to stress test an Oracle database. In this post, I will be playing with Swingbench and showing how it can be used. This article will focus on comparing the performance of buffered I/O versus un-buffered I/O (i.e. direct I/O) using the Swingbench tool. Since this article is not about direct I/O (I encourage the interested reader to have a look <a href="http://kevinclosson.wordpress.com/2007/02/23/oracle-direct-io-brought-to-you-by-deranged-monkeys/">here</a> for more information on this topic), any results presented here should not be considered conclusive. The results presented are very simple and not complicated at all so should not be taken very seriously. The main point of this article is demonstrate the Swingbench utility; how to set it up and use it.
 

@@ -2,7 +2,7 @@
 wordpress_id: 37
 layout: post
 title: srvctl Error in Solaris 10 RAC Environment
-wordpress_url: http://posulliv.com/?p=37
+category: oracle
 ---
 If you install a RAC environment on Solaris 10 and set kernel parameters using resource control projects (which is the recommended method in Solaris 10), then you will likely encounter issues when trying to start the cluster database or an individual instance using the <code>srvctl</code> utility. As an example, this is likely what you will encounter:
 

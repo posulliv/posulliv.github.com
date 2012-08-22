@@ -1,6 +1,7 @@
 --- 
 layout: post
 title: Observing Oracle I/O Access Patterns with DTrace
+category: oracle
 ---
 In this post, I will use the <code>seeks.d</code> and <code>iopattern</code> DTrace scripts, which are available as part of the <a href="http://www.opensolaris.org/os/community/dtrace/dtracetoolkit/">DTraceToolKit</a> (This toolkit is an extremely useful collection of scripts created by <a href="http://www.brendangregg.com/">Brendan Gregg</a>), to view the I/O access patterns typical of Oracle. DTrace is able to capture data throughout the kernel and so the job of finding access patterns has been greatly simplified.<br>
 

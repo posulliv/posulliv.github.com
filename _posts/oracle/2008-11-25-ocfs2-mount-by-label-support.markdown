@@ -2,7 +2,7 @@
 wordpress_id: 27
 layout: post
 title: OCFS2 Mount by Label Support
-wordpress_url: http://posulliv.com/?p=27
+category: oracle
 ---
 While messing around with OCFS2 on my RHEL4 install, I discovered that if I created an OCFS2 filesystem with a label, I was unable to mount it by that label. I would encounter the following:
 

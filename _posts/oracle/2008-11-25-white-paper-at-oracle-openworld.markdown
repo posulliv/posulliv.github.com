@@ -2,7 +2,7 @@
 wordpress_id: 26
 layout: post
 title: White Paper at Oracle OpenWorld
-wordpress_url: http://posulliv.com/?p=26
+category: oracle
 ---
 A white paper that I was part of writing is being presented at Oracle OpenWorld this week. The paper is entitled 'High Availability Options for the Oracle Database'. It is being presented by Dan Norris and I wrote the sections on Export/Import and data pump. The paper is available for download from the IT Convergence website <a href="http://www.itconvergence.com/portal/page?_pageid=33,39115&amp;_dad=portal&amp;_schema=PORTAL">here</a>.
 

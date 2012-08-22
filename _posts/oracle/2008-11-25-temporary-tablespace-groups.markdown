@@ -2,7 +2,7 @@
 wordpress_id: 29
 layout: post
 title: Temporary Tablespace Groups
-wordpress_url: http://posulliv.com/?p=29
+category: oracle
 ---
 Temporary tablespace groups are a new feature introduced in Oracle10g. A temporary tablespace group is a list of tablespaces and is implicitly created when the first temporary tablespace is created. Its members can only be temporary tablespaces.
 
