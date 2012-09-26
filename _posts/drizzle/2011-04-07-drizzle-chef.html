@@ -13,7 +13,7 @@ This post is a tutorial on how to deploy Drizzle on an EC2 instance using chef a
 In this article, we'll use the Opscode platform since it provides an easy way for anyone to get started with chef. If you are a new user, proceed to <a href="https://community.opscode.com/users/new">sign up</a> for a new account. Once you are signed up, the next step is to create a new organization. For this article, I'm going to create an organization named drizzle-test. Once your organization is created, you should see the organization in your list of organizations when you click on the Organizations link at the top right of the opscode console. My view looks like (you should be able to click on the image to see a larger version):
 </p>
 
-<img src="../../../images/console_orgs.png" width=750 />
+<img src="/images/console_orgs.png" width=750 />
 
 <h2>Configure AWS</h2>
 
@@ -25,7 +25,7 @@ An assumption made in this article is that you have an <a href="http://aws.amazo
 There are a few items that need to be configured for EC2 that we need to do to make our lives easier before starting with chef. Amazon blocks all incoming traffic to EC2 instances by default. SSH is used by chef to access and bootstrap a newly created instance. We want to allow SSH traffic to our EC2 instances and for this article, I want to permit traffic to the drizzle port (default drizzle port is 4427) as well. This is accomplished using the AWS console. We need to configure Security Groups. You can either create a new security group and modify the default security group. For this article, I'll create a new security group named drizzle and add the appropriate rules. After creating the group and adding the rules, the security group details should look like:
 </p>
 
-<img src="../../../images/security_group.png" width=750 />
+<img src="/images/security_group.png" width=750 />
 
 <p>
 I'll also create a new key pair in the AWS console specifically for this article. I'm going to give this key pair the name drizzle. After creating the key pair, I copy the downloaded private key to my SSH folder and update permissions on the key:
@@ -113,7 +113,7 @@ mkdir -p ~/drizzle-chef-repo/.chef
 Next, we need to download keys and knife configuration files from the Opscode platform that will be used for interacting with Opscode platform. Keys are needed for both your user and organization on the Opscode Platform. To retrieve your user key (if you did not download it when signing up), click on your username through the console and you will a 'get private key' link on your account page:
 </p>
 
-<img src="../../../images/user_key.png" width=750 />
+<img src="/images/user_key.png" width=750 />
 
 <p>
 After Downloading this key, I need to place it in the configuration directory for the chef repository I am using here:
