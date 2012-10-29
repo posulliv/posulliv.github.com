@@ -1,0 +1,456 @@
+<!doctype html>  
+<html lang="en">
+	
+	<head>
+		<meta charset="utf-8">
+		
+		<title>Deploying and Building Your First Application with Akiban</title>
+
+		<meta name="description" content="A webinar on deploying the Akiban Server">
+		<meta name="author" content="Padraig O'Sullivan">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		
+		<link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+		
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+		<!-- For syntax highlighting -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- If the query includes 'print-pdf', use the PDF print sheet -->
+		<script>
+			document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+		</script>
+
+		<!--[if lt IE 9]>
+		<script src="lib/js/html5shiv.js"></script>
+		<![endif]-->
+	</head>
+	
+	<body>
+		
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+      <header>
+        <a href="http://akiban.com/"><img height="75" src="images/akiban_logo.png"></a>
+      </header>
+
+				<section>
+					<h1>Akiban</h1>
+					<h3>Its Kind Of a Big Deal</h3>
+      </section>
+
+				<section>
+					<h2>What's Akiban?</h2>
+					<p>
+            Akiban is a new (soon to be fully open source) relational database featuring a unique storage optimization referred to
+            as table grouping.
+					</p>
+					<p>
+						<i><small>- <a href="http://posulliv.gihub.com">Padraig O'Sullivan</a> / <a href="http://twitter.com/posulliv">@posulliv</a></small></i>
+					</p>
+				</section>
+				
+				<!-- Table Grouping nested vertical slides -->
+				<section>
+					<section>
+						<h2>Table Grouping</h2>
+					  <blockquote cite="http://renormalize.org/post/24114496133/impedance-mismatch-peace">
+						  Let there be peace in the Vietnam of Computer Science.
+					  </blockquote>
+						<a class="test" href="http://renormalize.org/post/24114496133/impedance-mismatch-peace">
+							<img width="280" height="326" src="images/oriherrnstadt.jpeg" alt="Ori">
+						</a>
+						<a href="http://en.wikipedia.org/wiki/Apocalypse_Now">
+							<img width="280" height="326" src="images/big-papa-brando-apocalypse-now.jpeg" alt="Brando">
+						</a>
+					</section>
+          <section>
+					  <h2>App Model in an ORM</h2>
+            <br><br>
+					  <pre><code contenteditable>
+class User < ActiveRecord::Base
+  .
+  .
+  has_many :posts
+  has_many :roles
+  has_many :photos
+  has_many :relationships
+  .
+  .
+end
+				  	</code></pre>
+			  	</section>
+					<section data-state="alert">
+						<h2>Vietnam</h2>
+            <img src="images/ungrouped_schema.png">
+					</section>
+					<section data-state="soothe">
+						<h2>Peace</h2>
+            <img src="images/grouped_schema.png">
+					</section>
+          <section>
+            <h2>Why Does That Help?</h2>
+            <br>
+            <p>Lots of reasons!</p>
+            <br>
+            <ul>
+              <li>Joins within a group are essentially "free"</li>
+              <li>SQL that you know and love still works</li>
+              <li>Retrieve an entire object in 1 request</li>
+            <ul>
+            <br>
+            <pre>SELECT ** FROM sometable</pre>
+          </section>
+				</section>
+
+        <section>
+	  			<section>
+	  				<h2>Installation</h2>
+	  				<p>
+	  					All that is required is Java!
+		  			</p>
+		  		  <a href="http://www.akiban.com/products/akiban-developer/latest#modal7">
+              <img width="160" height="200" src="images/apple_logo.png" alt="Apple">
+			  	  </a>
+            <a href="http://www.akiban.com/products/akiban-developer/latest#modal6">
+              <img width="160" height="200" src="images/windows_logo.png" alt="Windows">
+            </a>
+            <a href="http://www.akiban.com/products/akiban-developer/latest#modal9">
+              <img width="160" height="200" src="images/redhat_logo.jpeg" alt="Red Hat">
+            </a>
+            <a href="http://www.akiban.com/products/akiban-developer/latest#modal8">
+              <img width="160" height="200" src="images/ubuntu_logo.gif" alt="Ubuntu">
+            </a>
+				  </section>
+          <section>
+            <h2>Ubuntu Installation Example</h2>
+            <br>
+            <p>
+            <pre>sudo apt-get install -y python-software-properties
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 0AA4244A
+sudo add-apt-repository "deb http://software.akiban.com/apt-developer lucid main"
+sudo apt-get update
+sudo apt-get install -y postgresql-client
+sudo apt-get install -y akiban-server
+            </pre>
+            </p>
+          </section>
+        </section>
+
+        <section>
+		  		<section>
+		  			<h2>Connecting from Command Line</h2>
+            <p>
+              <img src="http://wiki.postgresql.org/images/3/30/PostgreSQL_logo.3colors.120x120.png" alt="PostgreSQL">
+            </p>
+			  		<p>
+            <pre>$ psql -h localhost -p 15432 test
+psql (9.0.5, server 8.4.7)
+WARNING: psql version 9.0, server version 8.4.
+         Some psql features might not work.
+Type "help" for help.
+
+test=>
+            </pre>
+					  </p>
+          </section>
+
+				  <section>
+					  <h2>Connecting with Client Drivers</h2>
+					  <pre><code contenteditable>
+require 'sequel'
+require 'pg'
+require 'json'
+
+hostname='postgres://localhost:15432/employees'
+DB = Sequel.connect(hostname)
+Sequel::Postgres.client_min_messages = nil
+Sequel::Postgres.force_standard_strings = false
+Sequel::Postgres.use_iso_date_format = false
+DB << "SET OutputFormat TO 'json'"
+ds = DB["SELECT ** FROM employees WHERE emp_no = ?", 10001]
+jds = ds.collect {|row| JSON.parse(row[:JSON]) }
+require 'pp'
+pp jds
+jds[0]['employees.titles'][0]['title']
+				  	</code></pre>
+			  	</section>
+        </section>
+
+				<section>
+					<h2>Creating Table Groups</h2>
+          <br>
+					<p>
+          <pre><code>CREATE TABLE table_name 
+( 
+  ... 
+  GROUPING FOREIGN KEY (column_name) REFERENCES parent_table_name
+)
+          </code></pre>
+					</p>
+          <br>
+          <p>
+          <pre><code>ALTER GROUP group_name DROP | ADD TABLE table_name</code></pre>
+          </p>
+        </section>
+
+				<section>
+					<h2>Execution Plans</h2>
+          <br>
+          <pre>sample=> explain select * from "user" where id = 1;
+                       OPERATORS                       
+-------------------------------------------------------
+ Project_Default(user.id, user.name, user.email)
+   AncestorLookup_Default(Index(user.PRIMARY) -> user)
+     IndexScan_Default(Index(user.PRIMARY), id = 1)
+(3 rows)
+
+sample=>
+          </pre>
+        </section>
+
+        <section>
+          <h2>Nested Result Sets</h2>
+          <br>
+          <pre>sample=> set OutputFormat = 'json';
+SET OutputFormat
+sample=> select ** from "user" where id = 1;
+ {"id":1,"name":"posulliv","email":"padraig@akiban.com","sample.photo":[{"id":1,"user_id":1,"state":"PROFILE","date_added":"2012-10-15 17:02:22","path":"URI_FOR_IMAGE_FILE"}],"sample.post":[{"id":1,"user_id":1,"status":"this is a post!","latitude":"51.8968917","longitude":"-8.4863157"},{"id":2,"user_id":1,"status":"at the brog having a pint!","latitude":"51.8975668","longitude":"-8.4725516"}],"sample.role":[{"user_id":1,"role_name":"admin"}]}
+(1 row)
+
+sample=>
+          </pre>
+        </section>
+
+        <section>
+          <h2>REST Module</h2>
+          <br>
+          <a href="http://localhost:8080/sample.user/1">http://localhost:8080/sample.user/1</a>
+          <p>
+            <img width="400" height="320" src="images/rest_browser.png">
+          </p>
+        </section>
+
+        <section>
+				  <section>
+					  <h2>Group Indexes</h2>
+            <br>
+					  <p>
+              Can contain columns from more than 1 table.
+					  </p>
+            <br>
+            <p>
+              Tables that are in a single branch of a group.
+            </p>
+          </section>
+				  <section>
+					  <h2>Creating Group Indexes</h2>
+            <br>
+					  <p>
+            <pre><code>CREATE INDEX index_name ON table_name
+( 
+  column_name, 
+  ... 
+) USING LEFT | RIGHT JOIN
+            </code></pre>
+					  </p>
+          </section>
+        </section>
+
+        <section>
+          <h2>Multiple Indexes</h2>
+          <br><br>
+          <p>
+            Multiple indexes can be intersected or merged.
+          </p>
+        </section>
+
+        <section>
+				  <section>
+					  <h2>Spatial Indexes</h2>
+            <br>
+					  <p>
+              Implemented using <em>z-order</em>
+					  </p>
+            <br>
+            <p class="fragment">
+              Transforms multi-dimensional data to one-dimension
+            </p>
+            <br>
+            <p class="fragment">
+              Problems Solved:
+            </p>
+            <ul>
+              <li class="fragment">Points in region</li>
+              <li class="fragment">Nearest neighbor</li>
+            </ul>
+          </section>
+				  <section>
+					  <h2>Creating Spatial Indexes</h2>
+            <br>
+					  <p>
+            <pre><code>CREATE INDEX index_name ON table_name
+(
+  Z_ORDER_LAT_LON(latitude_column, longitude_column)
+)
+            </code></pre>
+					  </p>
+          </section>
+        </section>
+
+				<section>
+					<h2>Configuring Akiban</h2>
+          <br>
+					<p>
+            <em>/etc/akiban/config</em>
+					</p>
+          <br>
+          <p>
+            <ul>
+              <li>server.properties</li>
+              <li>log4j.properties</li>
+              <li>jvm.options</li>
+            </ul>
+          </p>
+        </section>
+
+        <section>
+          <h2>Information Schema</h2>
+          <br>
+          <p>
+            <em>information_schema</em> as defined in SQL standard
+          </p>
+          <p>
+            Some of the tables in the schema are:
+          </p>
+          <ul>
+            <li>columns</li>
+            <li>tables</li>
+            <li>grouping_constraints</li>
+            <li>indexes</li>
+            <li>index_statistics</li>
+          </ul>
+          <br><br>
+          <p>
+            All explained in our online <a href="http://www.akiban.com/ak-docs/admin/server/information_schema/information.schema.html">docs</a>.
+          </p>
+        </section>
+
+				<section>
+					<h2>Monitoring Akiban</h2>
+					<p>
+          Tables in <em>information_schema</em>
+					</p>
+          <ul>
+            <li>server_sessions</li>
+            <li>server_instance_summary</li>
+            <li>server_parameters</li>
+            <li>storage_buffer_pools</li>
+            <li>storage_trees</li>
+            <li>storage_io_meters</li>
+          </ul>
+          <br><br>
+          <p class="fragment">
+            <a href="https://github.com/akiban/akiban-monitoring">Monitoring scripts</a> available. Currently only support for Cacti.
+          </p>
+        </section>
+
+        <section>
+          <h2>Query Logging</h2>
+          <br>
+          <p>
+            Plain text, structured file readable by humans and easily parsable by tools.
+          </p>
+          <br>
+          <pre># 2012-09-08 22:39:40.727
+# session_id=6
+# execution_time=53391
+select t1.c1 from  t1 join t2 on t1.c1 = t2.c2 where t1.c1 = 27578 order by t2.c2;
+#
+# 2012-09-08 22:40:06.63
+# session_id=6
+# execution_time=17782
+select * from t2;
+#
+          </pre>
+        </section>
+
+				<section>
+					<h2>Logical Backups</h2>
+          <br><br>
+					<p>
+          <pre>$ akdump --help
+DumpClient [--no-schemas] [-no-data] [-o file] [-h host] [-p port] schemas...
+If no schemas are given, all are dumped.
+$
+          </pre>
+					</p>
+        </section>
+				
+				<section>
+          <h2>Adapters for Other Databases</h2>
+          <br><br>
+          <p>
+            Adapter exists for MySQL.
+          </p>
+          <br>
+          <p>
+          <a href="http://goo.gl/1Rg89">Webinar</a> covering MySQL deployment next week.
+          </p>
+          <br>
+          <p>
+            Working on adapters for other systems - Sybase, PostgreSQL, Oracle, etc.
+          </p>
+				</section>
+
+				<section>
+					<h1>THE END</h1>
+					<h3>padraig@akiban.com</h3>
+          <h3>#akiban / irc.freenode.net</h3>
+          <h3><a href="http://akiban.com/downloads/">akiban.com/downloads</a></h3>
+          <h3><a href="http://github.com/akiban/">github.com/akiban</a></h3>
+          <h3><a href="http://launchpad.net/akiban">launchpad.net/akiban</a></h3>
+				</section>
+
+			</div>
+			
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.min.js"></script>
+
+		<script>
+			
+			// Full list of configuration options available here:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				
+				theme: Reveal.getQueryHash().theme || 'default', // available themes are in /css/theme
+				transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/linear(2d)
+
+				// Optional libraries used to extend on reveal.js
+				dependencies: [
+					{ src: 'lib/js/highlight.js', async: true, callback: function() { window.hljs.initHighlightingOnLoad(); } },
+					{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'lib/js/showdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'lib/js/data-markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'plugin/zoom-js/zoom.js', condition: function() { return !!document.body.classList; } },
+					{ src: '/socket.io/socket.io.js', async: true, condition: function() { return window.location.host === 'localhost:1947'; } },
+					{ src: 'plugin/speakernotes/client.js', async: true, condition: function() { return window.location.host === 'localhost:1947'; } }
+				]
+			});
+			
+		</script>
+
+	</body>
+</html>
