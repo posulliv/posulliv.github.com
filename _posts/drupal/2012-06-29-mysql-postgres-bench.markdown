@@ -549,7 +549,7 @@ any interesting experiences I have here.
 [hpd_group]:  http://groups.drupal.org/high-performance
 [drush_link]: http://drupal.org/project/drush
 [dbtng_link]: http://drupal.org/project/dbtng_migrator
-[dbtng_post]: http://posulliv.github.com/2012/06/26/migrate-mysql-postgres.html
+[dbtng_post]: http://posulliv.github.com/drupal/2012/06/26/migrate-mysql-postgres/
 [ami_gist]:   https://gist.github.com/2691521
 [pg_gist]:    https://gist.github.com/3012400
 [pgbouncer_link]: http://pgfoundry.org/projects/pgbouncer
