@@ -1,7 +1,7 @@
 --- 
 title: Using Akiban Server with Drupal 6
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 In my [previous post][post_link], I mentioned I'm working on a database driver

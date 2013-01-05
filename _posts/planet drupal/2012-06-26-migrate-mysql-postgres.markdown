@@ -1,7 +1,7 @@
 --- 
 title: Migrating Drupal 7 Site from MySQL to PostgreSQL on Ubuntu 10.04
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 I recently needed to migrate a Drupal 7 site running on a MySQL 5.5 database

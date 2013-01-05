@@ -1,7 +1,7 @@
 --- 
 title: Akiban Server Progress with Drupal 7
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 The call for papers for [DrupalCon Munich][drupalcon] closed on Friday and I

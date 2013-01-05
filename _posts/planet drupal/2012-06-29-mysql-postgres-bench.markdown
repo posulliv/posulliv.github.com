@@ -1,7 +1,7 @@
 --- 
 title: Comparing PostgreSQL 9.1 vs. MySQL 5.6 using Drupal 7.x
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 Its tough to come across much information about running Drupal on PostgreSQL

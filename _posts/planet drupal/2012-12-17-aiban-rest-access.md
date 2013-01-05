@@ -1,7 +1,7 @@
 --- 
 title: Making Drupal more RESTful with Akiban
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 [Last week][drupal_7_on_akiban], I published an article on how to
@@ -473,6 +473,6 @@ comments are very much welcome and feel free to ping me on
 [my_twitter]: https://twitter.com/intent/user?screen_name=posulliv
 [docs_link]: http://www.akiban.com/ak-docs/admin/server/server.config.html
 [akiban_drupal]: http://drupal.org/sandbox/posulliv/1835778
-[drupal_7_on_akiban]: http://posulliv.github.com/drupal/2012/12/14/drupal-7-install-akiban/
+[drupal_7_on_akiban]: http://posulliv.github.com/planet%20drupal/2012/12/14/drupal-7-install-akiban/
 [devel_link]: http://drupal.org/project/devel
 [rest_client]: https://github.com/akiban/akiban-rest-js

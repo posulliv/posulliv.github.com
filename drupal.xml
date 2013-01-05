@@ -15,7 +15,7 @@ layout: nil
  
  {% for post in site.posts %}
    {% for cat in post.categories %}
-     {% if post.category == 'drupal' %}
+     {% if post.category == 'planet drupal' %}
        <entry>
          <title>{{ post.title }}</title>
          <link href="http://posulliv.github.com/{{ post.url }}"/>

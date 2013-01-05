@@ -1,7 +1,7 @@
 --- 
 title: Installing Drupal 7 with Akiban
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 Dries recently published a [post][dries_post] highlighting some work we've done

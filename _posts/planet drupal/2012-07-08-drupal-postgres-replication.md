@@ -1,7 +1,7 @@
 --- 
 title: Configuring Drupal 7.x With PostgreSQL Replication
 layout: post
-category: drupal
+category: planet drupal
 ---
 {% include JB/setup %}
 

@@ -1,7 +1,7 @@
 --- 
 title: Digging into Drupal's Schema
 layout: post
-category: drupal
+category: planet drupal
 ---
 
 I'm relatively new to Drupal internals and most of the [work][akiban_link] I do is on the 
