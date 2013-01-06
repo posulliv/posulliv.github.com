@@ -6,7 +6,7 @@ layout: nil
  <channel>
 
   <title>Padraig O'Sullivan - Drupal</title>
-  <link/>
+  <link>http://posulliv.gitub.com</link>
   <description/>
   <language>en</language>
 
@@ -19,7 +19,7 @@ layout: nil
           <description>
             {{ post.content | xml_escape }}
           </description>
-          <pubDate>{{ post.date | date_to_xmlschema }}</pubDate>
+          <pubDate>post.date</pubDate>
         </item>
       {% endif %}
     {% endfor %}
