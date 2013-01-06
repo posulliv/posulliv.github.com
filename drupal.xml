@@ -19,7 +19,7 @@ layout: nil
           <description>
             {{ post.content | xml_escape }}
           </description>
-          <pubDate>post.date</pubDate>
+          <pubDate>{{ post.date }}</pubDate>
         </item>
       {% endif %}
     {% endfor %}
