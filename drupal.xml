@@ -16,13 +16,13 @@ layout: nil
  {% for post in site.posts %}
    {% for cat in post.categories %}
      {% if post.category == 'planet drupal' %}
-       <entry>
+       <item>
          <title>{{ post.title }}</title>
          <link href="http://posulliv.github.com/{{ post.url }}"/>
          <updated>{{ post.date | date_to_xmlschema }}</updated>
          <id>http://posulliv.github.com/{{ post.id }}</id>
          <content type="html">{{ post.content | xml_escape }}</content>
-       </entry>
+       </item>
      {% endif %}
    {% endfor %}
  {% endfor %}
