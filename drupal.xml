@@ -2,29 +2,28 @@
 layout: nil
 ---
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom">
- 
- <title>Drupal Feed</title>
- <link href="http://posulliv.github.com/drupal.xml" rel="self"/>
- <updated>{{ site.time | date_to_xmlschema }}</updated>
- <id>http://posulliv.github.com/</id>
- <author>
-   <name>Padraig O'Sullivan</name>
-   <email>osullivan.padraig@gmail.com</email>
- </author>
- 
- {% for post in site.posts %}
-   {% for cat in post.categories %}
-     {% if post.category == 'planet drupal' %}
-       <item>
-         <title>{{ post.title }}</title>
-         <link href="http://posulliv.github.com/{{ post.url }}"/>
-         <updated>{{ post.date | date_to_xmlschema }}</updated>
-         <id>http://posulliv.github.com/{{ post.id }}</id>
-         <content type="html">{{ post.content | xml_escape }}</content>
-       </item>
-     {% endif %}
-   {% endfor %}
- {% endfor %}
- 
-</feed>
+<rss version="2.0" xml:base="http://posulliv.github.com">
+ <channel>
+
+  <title>Padraig O'Sullivan - Drupal</title>
+  <link/>
+  <description/>
+  <language>en</language>
+
+  {% for post in site.posts %}
+    {% for cat in post.categories %}
+      {% if post.category == 'planet drupal' %}
+        <item>
+          <title>{{ post.title }}</title>
+          <link>http://posulliv.github.com/{{ post.url }}</link>
+          <description>
+            {{ post.content | xml_escape }}
+          </description>
+          <pubDate>{{ post.date | date_to_xmlschema }}</pubDate>
+        </item>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+
+ </channel>
+</rss>
