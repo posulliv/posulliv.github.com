@@ -33,6 +33,9 @@ group: navigation
   * Programmed the sensor nodes in nesC.
   * Developed Java application to control the sensor nodes and aggregate all the information collected by the nodes, then place this information in a MySQL database.
   * Developed web frontend to display the archived information and allow report generation.
+* Software Engineer at [Oracle Corporation][oracle_link] : June 2004 to June 2005
+  * Worked as part of Oracle Forms and Reports team to automate testing of the platform.
+  * Automated testing of the of Oracle Universal Installer on various platforms.
 
 # Education
 
