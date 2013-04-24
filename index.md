@@ -3,8 +3,7 @@ layout: page
 ---
 {% include JB/setup %}
 
-Welcome to my personal blog. I am a software engineer currently employed at
-[Akiban Technologies](http://akiban.com). 
+Welcome to my personal blog. I'm a developer currently living in Boston.
 
 For a full archive of all my posts, please see the [archive](archive.html).
 
