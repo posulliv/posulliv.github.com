@@ -1,0 +1,7 @@
+baseURL = 'http://example.org/'
+languageCode = 'en-us'
+title = "Padraig O'Sullivan"
+theme = "paper"
+
+[params]
+  github = 'posulliv'
