@@ -2,6 +2,7 @@ baseURL = 'http://example.org/'
 languageCode = 'en-us'
 title = "Home"
 theme = "paper"
+googleAnalytics = 'G-303687650'
 
 [params]
   github = 'posulliv'
