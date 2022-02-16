@@ -1,6 +1,6 @@
 ---
 title: "Updating resource groups without restarting Trino"
-date: 2022-02-07T10:25:06-05:00
+date: 2022-03-01T10:25:06-05:00
 draft: false
 ---
 
