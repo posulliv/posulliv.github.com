@@ -1,0 +1,193 @@
+<!doctype html><html lang=en-us>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+<title>Updating resource groups without restarting Trino - Home</title><meta name=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
+<meta name=author content>
+<link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css>
+<link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css>
+<script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
+<link rel=preload as=image href=https://posulliv.github.io/theme.png>
+<link rel=preload as=image href=https://posulliv.github.io/twitter.svg>
+<link rel=preload as=image href=https://posulliv.github.io/github.svg>
+<link rel=icon href=https://posulliv.github.io/favicon.ico>
+<link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png>
+<meta name=generator content="Hugo 0.93.0">
+<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-303687650","auto"),ga("send","pageview"))</script>
+<script async src=https://www.google-analytics.com/analytics.js></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-303687650"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-303687650",{anonymize_ip:!1})}</script>
+<meta property="og:title" content="Updating resource groups without restarting Trino">
+<meta property="og:description" content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://posulliv.github.io/posts/dynamic-resource-groups/"><meta property="article:section" content="posts">
+<meta property="article:published_time" content="2022-03-01T10:25:06-05:00">
+<meta property="article:modified_time" content="2022-03-01T10:25:06-05:00">
+<meta itemprop=name content="Updating resource groups without restarting Trino">
+<meta itemprop=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."><meta itemprop=datePublished content="2022-03-01T10:25:06-05:00">
+<meta itemprop=dateModified content="2022-03-01T10:25:06-05:00">
+<meta itemprop=wordCount content="1020">
+<meta itemprop=keywords content>
+<meta name=twitter:card content="summary">
+<meta name=twitter:title content="Updating resource groups without restarting Trino">
+<meta name=twitter:description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
+</head><body class=not-ready data-menu=false>
+<header class=header>
+<p class=logo>
+<a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a>
+</p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script>
+<nav class=social>
+<a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
+<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a>
+</nav></header><main class=main>
+<article class=post-single>
+<header class=post-title>
+<p>
+<time>Mar 1, 2022</time>
+</p><h1>Updating resource groups without restarting Trino</h1></header><section class=post-content><p><a href=https://trino.io/docs/current/admin/resource-groups.html>Resource groups</a> is
+an admission control feature in Trino. Typically, this is configured by storing
+the resource groups configuration in a JSON file and telling Trino where to read
+this file from. Any updates to the JSON file are not reflected in Trino until
+the cluster is restarted.</p><p>Recently, I was working on a cluster that had a requirement to be able to update
+resource group defintions without restarting the cluster. Trino does have support
+for a database-based resource group manager. This means Trino will load the
+resource group definitions from a relational database instead of a JSON file. The
+supported databases are MySQL, PostgreSQL, and Oracle (in versions prior to 369,
+only MySQL is supported).</p><p>To configure Trino to use a database-based resource group manager, add an
+<code>etc/resource-groups.properties</code> file. Here is an example of the file contents
+when using a MySQL database for storing resource group definitions:</p><pre tabindex=0><code>resource-groups.configuration-manager=db
+resource-groups.config-db-url=jdbc:mysql://localhost:3306/resource_groups
+resource-groups.config-db-user=trino
+resource-groups.config-db-password=trino
+</code></pre><p>The resource groups are configured through tables
+<code>resource_groups_global_properties</code>, <code>resource_groups</code>, and <code>selectors</code>.
+If any of the tables are not present when Trino starts, they will be created
+automatically.</p><p>The rules in the <code>selectors</code> table are processed in descending order of the
+values in the <code>priority</code> field.</p><p>The <code>resource_groups</code> table also contains an <code>environment</code> field which is
+matched with the value contained in the <code>node.environment</code> property in
+<code>node.properties</code>. This allows the resource group configuration for different
+Trino clusters to be stored in the same database.</p><p>The configuration is reloaded from the database every second, and the changes
+are reflected automatically for incoming queries.</p><p>Once Trino is configured to use a database resource group manager, you will
+see something like the following in the <code>server.log</code> file on startup:</p><pre tabindex=0><code>2022-02-03T20:20:09.623-0500	INFO	main	io.trino.execution.resourcegroups.InternalResourceGroupManager	-- Loading resource group configuration manager --
+2022-02-03T20:20:09.818-0500	INFO	main	io.trino.plugin.resourcegroups.db.FlywayMigration	Performing migrations...
+2022-02-03T20:20:10.173-0500	INFO	main	org.flywaydb.core.internal.license.VersionPrinter	Flyway Community Edition 7.15.0 by Redgate
+2022-02-03T20:20:10.174-0500	INFO	main	org.flywaydb.core.internal.database.base.BaseDatabaseType	Database: jdbc:mysql://localhost:3306/resource_groups (MySQL 8.0)
+2022-02-03T20:20:10.263-0500	INFO	main	org.flywaydb.core.internal.command.DbValidate	Successfully validated 4 migrations (execution time 00:00.045s)
+2022-02-03T20:20:10.522-0500	INFO	main	org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory	Creating Schema History table `resource_groups`.`flyway_schema_history` ...
+2022-02-03T20:20:10.669-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Current version of schema `resource_groups`: &lt;&lt; Empty Schema &gt;&gt;
+2022-02-03T20:20:10.681-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Migrating schema `resource_groups` to version &#34;1 - add resource groups global properties&#34;
+2022-02-03T20:20:10.760-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Migrating schema `resource_groups` to version &#34;2 - add resource groups&#34;
+2022-02-03T20:20:10.847-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Migrating schema `resource_groups` to version &#34;3 - add selectors&#34;
+2022-02-03T20:20:10.931-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Migrating schema `resource_groups` to version &#34;4 - add exact match source selectors&#34;
+2022-02-03T20:20:11.093-0500	INFO	main	org.flywaydb.core.internal.command.DbMigrate	Successfully applied 4 migrations to schema `resource_groups`, now at version v4 (execution time 00:00.435s)
+2022-02-03T20:20:11.104-0500	INFO	main	io.trino.plugin.resourcegroups.db.FlywayMigration	Performed 4 migrations
+</code></pre><p>Notice the messages related to migrations. This means Trino created the
+necessary tables in MySQL because they did not exist. Now the correct schema
+exists but there are no resource groups configured.</p><p>If you try to run a query in Trino now, you will get an error:</p><pre tabindex=0><code>trino&gt; show catalogs;
+Query 20220204_012217_00000_ajzng failed: No selectors are configured
+
+trino&gt;
+</code></pre><p>We will use a tool I put together named <a href=https://github.com/posulliv/trino-db-resource-groups-cli>trino-db-resource-groups-cli</a>
+that can take a JSON file with a resource groups defined and load them into a
+database (see the README for instructions on how to install the tool). For
+example, assume we have a JSON file with the following contents:</p><pre tabindex=0><code>{
+  &#34;rootGroups&#34;: [
+    {
+      &#34;name&#34;: &#34;global&#34;,
+      &#34;softMemoryLimit&#34;: &#34;95%&#34;,
+      &#34;hardConcurrencyLimit&#34;: 100,
+      &#34;maxQueued&#34;: 1000,
+      &#34;subGroups&#34;: [
+        {
+          &#34;name&#34;: &#34;adhoc&#34;,
+          &#34;softMemoryLimit&#34;: &#34;50%&#34;,
+          &#34;hardConcurrencyLimit&#34;: 50,
+          &#34;maxQueued&#34;: 100,
+          &#34;hardCpuLimit&#34;: &#34;10h&#34;,
+          &#34;subGroups&#34;: [
+            {
+              &#34;name&#34;: &#34;adhoc-${USER}&#34;,
+              &#34;softMemoryLimit&#34;: &#34;30%&#34;,
+              &#34;hardConcurrencyLimit&#34;: 10,
+              &#34;maxQueued&#34;: 10
+            }
+          ]
+        }
+      ]
+    },
+    {
+      &#34;name&#34;: &#34;admin&#34;,
+      &#34;softMemoryLimit&#34;: &#34;100%&#34;,
+      &#34;hardConcurrencyLimit&#34;: 500,
+      &#34;maxQueued&#34;: 100
+    }
+  ],
+  &#34;selectors&#34;: [
+    {
+      &#34;user&#34;: &#34;bob&#34;,
+      &#34;group&#34;: &#34;admin&#34;
+    },
+    {
+      &#34;user&#34;: &#34;verifier&#34;,
+      &#34;group&#34;: &#34;global.adhoc&#34;
+    },
+    {
+      &#34;source&#34;: &#34;jdbc#(?&lt;toolname&gt;.*)&#34;,
+      &#34;clientTags&#34;: [&#34;hipri&#34;, &#34;urgent&#34;],
+      &#34;group&#34;: &#34;global.adhoc.adhoc-${USER}&#34;
+    },
+    {
+      &#34;group&#34;: &#34;global.adhoc.adhoc-${USER}&#34;
+    }
+  ],
+  &#34;cpuQuotaPeriod&#34;: &#34;1h&#34;
+}
+</code></pre><p>We run <code>trino-db-resource-groups-cli</code> to take this JSON and populate the database
+tables for a specific environment. When running the tool, you will see output like:</p><pre tabindex=0><code>$ trino-db-resource-groups-cli create_resource_groups --db-config=resource-groups.properties --resource-groups-json=example.json --environment=test
+2022-02-03T20:23:34.925-0500	INFO	main	io.airlift.log.Logging	Logging to stderr
+2022-02-03T20:23:34.928-0500	INFO	main	Bootstrap	Loading configuration
+2022-02-03T20:23:35.161-0500	INFO	main	Bootstrap	Initializing logging
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	PROPERTY                                      DEFAULT     RUNTIME                                      DESCRIPTION
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	resource-groups.config-db-password            [REDACTED]  [REDACTED]                                   Database password
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	resource-groups.config-db-url                 ----        jdbc:mysql://localhost:3306/resource_groups
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	resource-groups.config-db-user                ----        trino                                        Database user name
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	resource-groups.exact-match-selector-enabled  false       false
+2022-02-03T20:23:35.401-0500	INFO	main	Bootstrap	resource-groups.max-refresh-interval          1.00h       1.00h                                        Time period for which the cluster will continue to accept queries after refresh failures cause configuration to become stale
+2022-02-03T20:23:35.605-0500	INFO	main	io.airlift.bootstrap.LifeCycleManager	Life cycle starting...
+2022-02-03T20:23:35.605-0500	INFO	main	io.airlift.bootstrap.LifeCycleManager	Life cycle started
+2022-02-03T20:23:35.606-0500	INFO	main	io.trino.resourcegroups.db.CreateResourceGroupsCommand	Environment to update resource groups for: test
+2022-02-03T20:23:35.606-0500	INFO	main	io.trino.resourcegroups.db.CreateResourceGroupsCommand	Input JSON file: example.json
+2022-02-03T20:23:36.748-0500	INFO	main	io.trino.resourcegroups.db.CreateResourceGroupsCommand	Resource groups created successfully
+2022-02-03T20:23:36.749-0500	INFO	main	io.airlift.bootstrap.LifeCycleManager	Life cycle stopping...
+2022-02-03T20:23:36.749-0500	INFO	main	io.airlift.bootstrap.LifeCycleManager	Life cycle stopped
+$
+</code></pre><p>The tool validates the resource groups defined in the JSON file before loading them
+into the database tables. If there is any invalid configuration in the input JSON,
+the CLI will throw an error and not update the database tables.</p><p>Now if we look at the Trino <code>server.log</code> file, we see the resource groups have
+been loaded from the database automatically:</p><pre tabindex=0><code>2022-02-03T20:23:37.198-0500	INFO	DbResourceGroupConfigurationManager	io.trino.plugin.resourcegroups.db.DbResourceGroupConfigurationManager	Resource group spec global changed to ResourceGroupSpec{name=global, softMemoryLimit=Optional.empty, maxQueued=1000, softConcurrencyLimit=Optional.empty, hardConcurrencyLimit=100, schedulingPolicy=Optional.empty, schedulingWeight=Optional.empty, jmxExport=Optional[false], softCpuLimit=Optional.empty, hardCpuLimit=Optional.empty}
+2022-02-03T20:23:37.199-0500	INFO	DbResourceGroupConfigurationManager	io.trino.plugin.resourcegroups.db.DbResourceGroupConfigurationManager	Resource group spec admin changed to ResourceGroupSpec{name=admin, softMemoryLimit=Optional.empty, maxQueued=100, softConcurrencyLimit=Optional.empty, hardConcurrencyLimit=500, schedulingPolicy=Optional.empty, schedulingWeight=Optional.empty, jmxExport=Optional[false], softCpuLimit=Optional.empty, hardCpuLimit=Optional.empty}
+2022-02-03T20:23:37.199-0500	INFO	DbResourceGroupConfigurationManager	io.trino.plugin.resourcegroups.db.DbResourceGroupConfigurationManager	Resource group spec global.adhoc.adhoc-${USER} changed to ResourceGroupSpec{name=adhoc-${USER}, softMemoryLimit=Optional.empty, maxQueued=10, softConcurrencyLimit=Optional.empty, hardConcurrencyLimit=10, schedulingPolicy=Optional.empty, schedulingWeight=Optional.empty, jmxExport=Optional[false], softCpuLimit=Optional.empty, hardCpuLimit=Optional.empty}
+2022-02-03T20:23:37.199-0500	INFO	DbResourceGroupConfigurationManager	io.trino.plugin.resourcegroups.db.DbResourceGroupConfigurationManager	Resource group spec global.adhoc changed to ResourceGroupSpec{name=adhoc, softMemoryLimit=Optional.empty, maxQueued=100, softConcurrencyLimit=Optional.empty, hardConcurrencyLimit=50, schedulingPolicy=Optional.empty, schedulingWeight=Optional.empty, jmxExport=Optional[false], softCpuLimit=Optional.empty, hardCpuLimit=Optional[10.00h]}
+</code></pre><p>If we try to run a query now, we will see it is successful:</p><pre tabindex=0><code>trino&gt; show catalogs;
+   Catalog
+--------------
+ blackhole
+ druid
+ 
+ Query 20220204_012425_00001_ajzng, FINISHED, 1 node
+Splits: 11 total, 11 done (100.00%)
+0.94 [0 rows, 0B] [0 rows/s, 0B/s]
+
+trino&gt;
+</code></pre><p>We can verify in the web UI that the query was assigned to the correct resource group:</p><p><img src=/img/trino_dynamic_resource_groups_post.png alt="Trino web UI"></p><p>That&rsquo;s all I wanted to cover in this post. If you have any questions or run
+into issues when trying this, you can find me on Trino&rsquo;s <a href=https://trino.io/slack.html>slack</a>.</p></section><nav class=post-nav>
+<a class=next href=https://posulliv.github.io/posts/writes-from-trino/><span>Notes on writing with the Hive connector in Trino</span><span>→</span></a>
+</nav></article></main><footer class=footer>
+<p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p>
+<a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a>
+</p></footer></body></html>
