@@ -1,60 +1,13 @@
-<!doctype html><html lang=en-us>
-<head>
-<meta charset=utf-8>
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<title>Notes on writing with the Hive connector in Trino - Home</title><meta name=description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
-These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here.">
-<meta name=author content>
-<link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css>
-<link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css>
-<script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
-<link rel=preload as=image href=https://posulliv.github.io/theme.png>
-<link rel=preload as=image href=https://posulliv.github.io/twitter.svg>
-<link rel=preload as=image href=https://posulliv.github.io/github.svg>
-<link rel=icon href=https://posulliv.github.io/favicon.ico>
-<link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png>
-<meta name=generator content="Hugo 0.93.1">
-<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script>
-<script async src=https://www.google-analytics.com/analytics.js></script>
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>Notes on writing with the Hive connector in Trino - Home</title><meta name=description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
+These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here."><meta name=author content><link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css><link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css><script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
+<link rel=preload as=image href=https://posulliv.github.io/theme.png><link rel=preload as=image href=https://posulliv.github.io/twitter.svg><link rel=preload as=image href=https://posulliv.github.io/github.svg><link rel=icon href=https://posulliv.github.io/favicon.ico><link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png><meta name=generator content="Hugo 0.96.0"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
-<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script>
-<meta property="og:title" content="Notes on writing with the Hive connector in Trino">
-<meta property="og:description" content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
-These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here.">
-<meta property="og:type" content="article">
-<meta property="og:url" content="https://posulliv.github.io/posts/writes-from-trino/"><meta property="article:section" content="posts">
-<meta property="article:published_time" content="2022-02-01T08:27:52-05:00">
-<meta property="article:modified_time" content="2022-02-01T08:27:52-05:00">
-<meta itemprop=name content="Notes on writing with the Hive connector in Trino">
-<meta itemprop=description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
-These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here."><meta itemprop=datePublished content="2022-02-01T08:27:52-05:00">
-<meta itemprop=dateModified content="2022-02-01T08:27:52-05:00">
-<meta itemprop=wordCount content="1636">
-<meta itemprop=keywords content>
-<meta name=twitter:card content="summary">
-<meta name=twitter:title content="Notes on writing with the Hive connector in Trino">
-<meta name=twitter:description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
-These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here.">
-</head><body class=not-ready data-menu=false>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
-<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script>
-<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script>
-<script async src=https://www.google-analytics.com/analytics.js></script>
-</head><header class=header>
-<p class=logo>
-<a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a>
-</p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script>
-<nav class=social>
-<a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
-<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a>
-</nav></header><main class=main>
-<article class=post-single>
-<header class=post-title>
-<p>
-<time>Feb 1, 2022</time>
-</p><h1>Notes on writing with the Hive connector in Trino</h1></header><section class=post-content><p>File size is probably the single largest contributor to poor query performance
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><meta property="og:title" content="Notes on writing with the Hive connector in Trino"><meta property="og:description" content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
+These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here."><meta property="og:type" content="article"><meta property="og:url" content="https://posulliv.github.io/posts/writes-from-trino/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2022-02-01T08:27:52-05:00"><meta property="article:modified_time" content="2022-02-01T08:27:52-05:00"><meta itemprop=name content="Notes on writing with the Hive connector in Trino"><meta itemprop=description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
+These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here."><meta itemprop=datePublished content="2022-02-01T08:27:52-05:00"><meta itemprop=dateModified content="2022-02-01T08:27:52-05:00"><meta itemprop=wordCount content="1636"><meta itemprop=keywords content><meta name=twitter:card content="summary"><meta name=twitter:title content="Notes on writing with the Hive connector in Trino"><meta name=twitter:description content="File size is probably the single largest contributor to poor query performance that I see when working with Trino. In this post, I wanted to cover the case where we are writing data through Trino using the Hive connector and how to control the size of files created in that case.
+These notes are based on the latest Trino release at the time of writing - 370. Where appropriate, I have linked to open github issues that may change some of the behavior discussed here."></head><body class=not-ready data-menu=false><head><script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script></head><header class=header><p class=logo><a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a></p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script><nav class=social><a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
+<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a></nav></header><main class=main><article class=post-single><header class=post-title><p><time>Feb 1, 2022</time></p><h1>Notes on writing with the Hive connector in Trino</h1></header><section class=post-content><p>File size is probably the single largest contributor to poor query performance
 that I see when working with Trino. In this post, I wanted to cover the case
 where we are writing data through Trino using the
 <a href=https://trino.io/docs/current/connector/hive.html>Hive connector</a> and how
@@ -66,8 +19,7 @@ how this works in practice.</p><h1 id=writer-scaling>Writer Scaling</h1><p>By de
 a writer task on every node in the cluster up to <code>hash_partition_count</code> which
 defaults to 100. Writer scaling is a feature where Trino first creates a single
 writer task. When evaluating whether to add additional writer tasks, Trino
-uses the following metrics:</p><ul>
-<li>minimum size of files to be created. This is configured by <code>writer_min_size</code>
+uses the following metrics:</p><ul><li>minimum size of files to be created. This is configured by <code>writer_min_size</code>
 which defaults to 32MB</li><li>current number of workers writer tasks are running on</li><li>total amount of physical bytes written so far</li><li>percentage of source tasks that have overutilized output buffers</li></ul><p>If at least 50% of the source tasks have output buffers that are overutilized
 (this is used as an indication that writing is a bottleneck) and the total
 number of physical bytes written so far is greater than or equal to
@@ -279,10 +231,5 @@ trino&gt;
 </code></pre><p>Now there is one file created per partition.</p><h1 id=summary>Summary</h1><p>These are my individual notes that I have collected while working with Trino.
 I am following development of the Iceberg connector and will write up my notes
 around writing with Iceberg once I have some more experience with it in real
-world deployments.</p></section><nav class=post-nav>
-<a class=prev href=https://posulliv.github.io/posts/dynamic-resource-groups/><span>←</span><span>Updating resource groups without restarting Trino</span></a>
-<a class=next href=https://posulliv.github.io/posts/coordinator-ha/><span>Coordinator HA in Trino with reverse nginx proxy</span><span>→</span></a>
-</nav></article></main><footer class=footer>
-<p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p>
-<a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a>
-</p></footer></body></html>
+world deployments.</p></section><nav class=post-nav><a class=prev href=https://posulliv.github.io/posts/dynamic-resource-groups/><span>←</span><span>Updating resource groups without restarting Trino</span></a>
+<a class=next href=https://posulliv.github.io/posts/coordinator-ha/><span>Coordinator HA in Trino with reverse nginx proxy</span><span>→</span></a></nav></article></main><footer class=footer><p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p><a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a></p></footer></body></html>

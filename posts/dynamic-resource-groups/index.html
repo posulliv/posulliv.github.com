@@ -1,60 +1,13 @@
-<!doctype html><html lang=en-us>
-<head>
-<meta charset=utf-8>
-<meta http-equiv=x-ua-compatible content="IE=edge">
-<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
-<title>Updating resource groups without restarting Trino - Home</title><meta name=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
-Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
-<meta name=author content>
-<link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css>
-<link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css>
-<script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
-<link rel=preload as=image href=https://posulliv.github.io/theme.png>
-<link rel=preload as=image href=https://posulliv.github.io/twitter.svg>
-<link rel=preload as=image href=https://posulliv.github.io/github.svg>
-<link rel=icon href=https://posulliv.github.io/favicon.ico>
-<link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png>
-<meta name=generator content="Hugo 0.93.1">
-<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script>
-<script async src=https://www.google-analytics.com/analytics.js></script>
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>Updating resource groups without restarting Trino - Home</title><meta name=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."><meta name=author content><link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css><link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css><script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
+<link rel=preload as=image href=https://posulliv.github.io/theme.png><link rel=preload as=image href=https://posulliv.github.io/twitter.svg><link rel=preload as=image href=https://posulliv.github.io/github.svg><link rel=icon href=https://posulliv.github.io/favicon.ico><link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png><meta name=generator content="Hugo 0.96.0"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
-<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script>
-<meta property="og:title" content="Updating resource groups without restarting Trino">
-<meta property="og:description" content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
-Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
-<meta property="og:type" content="article">
-<meta property="og:url" content="https://posulliv.github.io/posts/dynamic-resource-groups/"><meta property="article:section" content="posts">
-<meta property="article:published_time" content="2022-03-01T10:25:06-05:00">
-<meta property="article:modified_time" content="2022-03-01T10:25:06-05:00">
-<meta itemprop=name content="Updating resource groups without restarting Trino">
-<meta itemprop=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
-Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."><meta itemprop=datePublished content="2022-03-01T10:25:06-05:00">
-<meta itemprop=dateModified content="2022-03-01T10:25:06-05:00">
-<meta itemprop=wordCount content="1020">
-<meta itemprop=keywords content>
-<meta name=twitter:card content="summary">
-<meta name=twitter:title content="Updating resource groups without restarting Trino">
-<meta name=twitter:description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
-Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster.">
-</head><body class=not-ready data-menu=false>
-<head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
-<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script>
-<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script>
-<script async src=https://www.google-analytics.com/analytics.js></script>
-</head><header class=header>
-<p class=logo>
-<a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a>
-</p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script>
-<nav class=social>
-<a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
-<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a>
-</nav></header><main class=main>
-<article class=post-single>
-<header class=post-title>
-<p>
-<time>Mar 1, 2022</time>
-</p><h1>Updating resource groups without restarting Trino</h1></header><section class=post-content><p><a href=https://trino.io/docs/current/admin/resource-groups.html>Resource groups</a> is
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><meta property="og:title" content="Updating resource groups without restarting Trino"><meta property="og:description" content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."><meta property="og:type" content="article"><meta property="og:url" content="https://posulliv.github.io/posts/dynamic-resource-groups/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2022-03-01T10:25:06-05:00"><meta property="article:modified_time" content="2022-03-01T10:25:06-05:00"><meta itemprop=name content="Updating resource groups without restarting Trino"><meta itemprop=description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."><meta itemprop=datePublished content="2022-03-01T10:25:06-05:00"><meta itemprop=dateModified content="2022-03-01T10:25:06-05:00"><meta itemprop=wordCount content="1020"><meta itemprop=keywords content><meta name=twitter:card content="summary"><meta name=twitter:title content="Updating resource groups without restarting Trino"><meta name=twitter:description content="Resource groups is an admission control feature in Trino. Typically, this is configured by storing the resource groups configuration in a JSON file and telling Trino where to read this file from. Any updates to the JSON file are not reflected in Trino until the cluster is restarted.
+Recently, I was working on a cluster that had a requirement to be able to update resource group defintions without restarting the cluster."></head><body class=not-ready data-menu=false><head><script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script></head><header class=header><p class=logo><a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a></p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script><nav class=social><a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
+<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a></nav></header><main class=main><article class=post-single><header class=post-title><p><time>Mar 1, 2022</time></p><h1>Updating resource groups without restarting Trino</h1></header><section class=post-content><p><a href=https://trino.io/docs/current/admin/resource-groups.html>Resource groups</a> is
 an admission control feature in Trino. Typically, this is configured by storing
 the resource groups configuration in a JSON file and telling Trino where to read
 this file from. Any updates to the JSON file are not reflected in Trino until
@@ -190,10 +143,5 @@ Splits: 11 total, 11 done (100.00%)
 
 trino&gt;
 </code></pre><p>We can verify in the web UI that the query was assigned to the correct resource group:</p><p><img src=/img/trino_dynamic_resource_groups_post.png alt="Trino web UI"></p><p>That&rsquo;s all I wanted to cover in this post. If you have any questions or run
-into issues when trying this, you can find me on Trino&rsquo;s <a href=https://trino.io/slack.html>slack</a>.</p></section><nav class=post-nav>
-<a class=prev href=https://posulliv.github.io/posts/orc-bloom-filters/><span>←</span><span>ORC bloom filters in Trino</span></a>
-<a class=next href=https://posulliv.github.io/posts/writes-from-trino/><span>Notes on writing with the Hive connector in Trino</span><span>→</span></a>
-</nav></article></main><footer class=footer>
-<p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p>
-<a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a>
-</p></footer></body></html>
+into issues when trying this, you can find me on Trino&rsquo;s <a href=https://trino.io/slack.html>slack</a>.</p></section><nav class=post-nav><a class=prev href=https://posulliv.github.io/posts/orc-bloom-filters/><span>←</span><span>ORC bloom filters in Trino</span></a>
+<a class=next href=https://posulliv.github.io/posts/writes-from-trino/><span>Notes on writing with the Hive connector in Trino</span><span>→</span></a></nav></article></main><footer class=footer><p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p><a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a></p></footer></body></html>
