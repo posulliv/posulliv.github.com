@@ -1,0 +1,196 @@
+<!doctype html><html lang=en-us><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no"><title>Using the Parquet CLI - Home</title><meta name=description content="The parquet CLI is a powerful tool for inspecting parquet files. I use it a lot for work at Starburst but I have not found much documentation that explains how to understand all the output that the tool provides.
+Typically, the information I am interested in gleaning from a parquet file is:
+how many row groups are in the file and what is the size of the row groups what encodings are used for each column column statistics if dictionary encoding was used for a column, whether or not fallback to plain encoding occurred column indexes In this post, I will cover the commands I commonly use and how to read the output that these commands provide to get the information I am interested in."><meta name=author content><link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css><link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css><script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
+<link rel=preload as=image href=https://posulliv.github.io/theme.png><link rel=preload as=image href=https://posulliv.github.io/twitter.svg><link rel=preload as=image href=https://posulliv.github.io/github.svg><link rel=icon href=https://posulliv.github.io/favicon.ico><link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png><meta name=generator content="Hugo 0.101.0"><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><meta property="og:title" content="Using the Parquet CLI"><meta property="og:description" content="The parquet CLI is a powerful tool for inspecting parquet files. I use it a lot for work at Starburst but I have not found much documentation that explains how to understand all the output that the tool provides.
+Typically, the information I am interested in gleaning from a parquet file is:
+how many row groups are in the file and what is the size of the row groups what encodings are used for each column column statistics if dictionary encoding was used for a column, whether or not fallback to plain encoding occurred column indexes In this post, I will cover the commands I commonly use and how to read the output that these commands provide to get the information I am interested in."><meta property="og:type" content="article"><meta property="og:url" content="https://posulliv.github.io/posts/parquet-cli/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2022-06-30T08:22:51-04:00"><meta property="article:modified_time" content="2022-06-30T08:22:51-04:00"><meta itemprop=name content="Using the Parquet CLI"><meta itemprop=description content="The parquet CLI is a powerful tool for inspecting parquet files. I use it a lot for work at Starburst but I have not found much documentation that explains how to understand all the output that the tool provides.
+Typically, the information I am interested in gleaning from a parquet file is:
+how many row groups are in the file and what is the size of the row groups what encodings are used for each column column statistics if dictionary encoding was used for a column, whether or not fallback to plain encoding occurred column indexes In this post, I will cover the commands I commonly use and how to read the output that these commands provide to get the information I am interested in."><meta itemprop=datePublished content="2022-06-30T08:22:51-04:00"><meta itemprop=dateModified content="2022-06-30T08:22:51-04:00"><meta itemprop=wordCount content="1860"><meta itemprop=keywords content><meta name=twitter:card content="summary"><meta name=twitter:title content="Using the Parquet CLI"><meta name=twitter:description content="The parquet CLI is a powerful tool for inspecting parquet files. I use it a lot for work at Starburst but I have not found much documentation that explains how to understand all the output that the tool provides.
+Typically, the information I am interested in gleaning from a parquet file is:
+how many row groups are in the file and what is the size of the row groups what encodings are used for each column column statistics if dictionary encoding was used for a column, whether or not fallback to plain encoding occurred column indexes In this post, I will cover the commands I commonly use and how to read the output that these commands provide to get the information I am interested in."></head><body class=not-ready data-menu=false><head><script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date),gtag("config","G-RB870JF93J",{anonymize_ip:!1})}</script><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","G-RB870JF93J","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script></head><header class=header><p class=logo><a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a></p><script>let bodyClx=document.body.classList,btnDark=document.querySelector(".btn-dark"),sysDark=window.matchMedia("(prefers-color-scheme: dark)"),darkVal=localStorage.getItem("dark"),setDark=e=>{bodyClx[e?"add":"remove"]("dark"),localStorage.setItem("dark",e?"yes":"no")};setDark(darkVal?darkVal==="yes":sysDark.matches),requestAnimationFrame(()=>bodyClx.remove("not-ready")),btnDark.addEventListener("click",()=>setDark(!bodyClx.contains("dark"))),sysDark.addEventListener("change",e=>setDark(e.matches))</script><nav class=social><a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
+<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a></nav></header><main class=main><article class=post-single><header class=post-title><p><time>Jun 30, 2022</time></p><h1>Using the Parquet CLI</h1></header><section class=post-content><p>The <a href=https://github.com/apache/parquet-mr/tree/master/parquet-cli>parquet CLI</a> is
+a powerful tool for inspecting parquet files. I use it a lot for work at
+<a href=https://www.starburst.io>Starburst</a> but I have not found much documentation that
+explains how to understand all the output that the tool provides.</p><p>Typically, the information I am interested in gleaning from a parquet file is:</p><ul><li>how many row groups are in the file and what is the size of the row groups</li><li>what encodings are used for each column</li><li>column statistics</li><li>if dictionary encoding was used for a column, whether or not fallback to plain
+encoding occurred</li><li>column indexes</li></ul><p>In this post, I will cover the commands I commonly use and how to read the output
+that these commands provide to get the information I am interested in.</p><p>I am only going to cover the output that would be seen when inspecting parquet
+files that were created by version 1.12 or great of the <code>parquet-mr</code> library.</p><h1 id=file-metadata>File metadata</h1><p>To view the metadata for a parquet file with the parquet CLI, we execute:</p><pre tabindex=0><code>parquet-cli meta &lt;path-to-parquet-file&gt;
+</code></pre><p>The output for this will first show you a header with information on the file:</p><pre tabindex=0><code>File path:  128_row_group.parquet
+Created by: parquet-mr version 1.12.2 (build 77e30c8093386ec52c3cfa6c34b7ef3321322c94)
+Properties:
+  writer.time.zone: GMT
+</code></pre><p>Next, it will show you the schema for the data contained in the parquet file:</p><pre tabindex=0><code>Schema:
+message hive_schema {
+  optional int64 orderkey;
+  optional int64 partkey;
+  optional int64 suppkey;
+  optional int32 linenumber;
+  optional double quantity;
+  optional double extendedprice;
+  optional double discount;
+  optional double tax;
+  optional binary returnflag (STRING);
+  optional binary linestatus (STRING);
+  optional int32 shipdate (DATE);
+  optional int32 commitdate (DATE);
+  optional int32 receiptdate (DATE);
+  optional binary shipinstruct (STRING);
+  optional binary shipmode (STRING);
+  optional binary comment (STRING);
+}
+</code></pre><p>Then there will be information for each row group in the file:</p><pre tabindex=0><code>Row group 0:  count: 4710100  28.38 B records  start: 4  total(compressed): 127.497 MB total(uncompressed):313.387 MB
+--------------------------------------------------------------------------------
+               type      encodings count     avg size   nulls   min / max
+orderkey       INT64     Z _ R_ F  4710100   0.48 B     0       &#34;4500010215&#34; / &#34;5167807264&#34;
+partkey        INT64     Z   _     4710100   4.30 B     0       &#34;50&#34; / &#34;199999871&#34;
+</code></pre><p>The header for each row group has the following metadata:</p><ul><li><em>Row group</em>: tells you which row group this is in the file (row group indices start at 0)</li><li><em>count</em>: the number of rows in the row group and the size in bytes of each row</li><li><em>total(compressed)</em>: compressed size of the data in the row group</li><li><em>total(uncompressed)</em>: uncompressed size of the data in the row group</li></ul><p>In this example, the parquet file was generated with a row group size of 128MB.
+This matches the compressed size of this row group - 127.497MB.</p><p>After the row group header, there will be a row for each column in the row group.
+What we are typically most interested in these rows is the <code>encodings</code> field and
+the <code>min / max</code> field.</p><p>The <code>encodings</code> field will contain a collection of characters. The <code>encodings</code> field
+is to be read by looking at each character in the string individually.</p><p>The possible characters you may see are:</p><ul><li>first and second - compression codec (possible options)</li><li>third and fourth - dictionary encoding or not</li><li>fifth, sixth, seventh - encoding of column (can be up to 3? characters)</li><li>eigth - whether or not fallback occurred</li></ul><p>For the first character that represents the compression codec, the characters
+you may see are:</p><ul><li><code>_</code> - uncompressed</li><li><code>S</code> - snappy</li><li><code>G</code> - gzip</li><li><code>L</code> - LZ0</li><li><code>B</code> - brotli</li><li><code>4</code> - LZ4</li><li><code>Z</code> - ZSTD</li><li><code>?</code> - unknown</li></ul><p>For the dictionary encoding you will either see an empty space or a <code>_</code>
+character.</p><p>For the column encoding, you may see 3 characters:</p><ul><li><code>R</code> - RLE or plain dictionary encoding</li><li><code>_</code> - plain encoding</li><li><code>D</code> - delta encoding</li></ul><p>As an example of how to read the <code>encodings</code> field, we will look at the <code>orderkey</code> column
+first. The encoding for this column is: <code>Z _ R_ F</code>. Each character in this string
+has a specific meaning:</p><ul><li><code>Z</code> - the compression codec; in this case ZSTD</li><li><code>_</code> - a leading <code>_</code> character in this field indicates the column has a
+dictionary encoding</li><li><code>R</code> - RLE is used for the dictionary encoding</li><li><code>_</code> - some of the data pages for this column are plain encoded</li><li><code>F</code> - this dictionary encoded column fell back to plain encoding
+because the size of the dictionary became large than the dictionary
+page size</li></ul><p>Next, we will look at the <code>partkey</code> column encodings: <code>Z _</code></p><p>We know this means the compression codec is ZSTD and this column only has a
+plain encoding because of the placement of the <code>_</code> character.</p><p>After the encoding information, it tells us for each column: the number of
+records, average size, and number of nulls.</p><p>Then finally, it tells us one of the most useful pieces of information for
+each column in the row group: the min/max values for the column in that
+row group.</p><p>This min/max information is very important for letting us know if min/max
+filtering of row groups will be effective for predicates on a particular
+column.</p><p>In this example, we see that the min/max range for the <code>orderkey</code> column is
+small but the range for the <code>partkey</code> column is quite large. This tells us
+that we can expect min/max filtering to be effective for the <code>orderkey</code> column
+but not as effective for the <code>partkey</code> column.</p><h1 id=dictionary-metadata>Dictionary metadata</h1><p>For a dictionary encoded column, the <code>parquet-cli</code> tool has an option to view
+the dictionary for that column:</p><pre tabindex=0><code>parquet-cli dictionary &lt;path-to-parquet-file&gt; -c &lt;column-name&gt;
+</code></pre><p>This command will output all keys/values for the dictionary in each row
+group for the specified column.</p><p>Using the same file as in our previous example, we can view information
+for the dictionaries for the <code>orderkey</code> column with:</p><pre tabindex=0><code>parquet-cli dictionary &lt;path-to-parquet-file&gt; -c orderkey
+</code></pre><p>This will have output like:</p><pre tabindex=0><code>Row group 0 dictionary for &#34;orderkey&#34;:
+     0: 4951167618
+     1: 4951167619
+     2: 4951167620
+     3: 4951167621
+...
+Row group 1 dictionary for &#34;orderkey&#34;:
+     0: 4930598149
+     1: 4930598150
+     2: 4930598151
+     3: 4930598176
+     4: 4930598177
+...
+Row group 2 dictionary for &#34;orderkey&#34;:
+     0: 4524740420
+     1: 4524740421
+     2: 4524740422
+     3: 4524740423
+     4: 4524740448
+...
+Row group 3 dictionary for &#34;orderkey&#34;:
+     0: 4847377187
+     1: 4847377188
+     2: 4847377189
+     3: 4847377190
+     4: 4847377191
+</code></pre><p>This parquet file has 4 row groups in it so we can see information for 4
+dictionaries. The values for each dictionary are the actual values for the column.
+In this case, the column is <code>orderkey</code> so they values are integers.</p><p>But you will see the same with other types. For example, if we look at the
+dictionaries for the <code>shipmode</code> column in this table:</p><pre tabindex=0><code>Row group 0 dictionary for &#34;shipmode&#34;:
+     0: &#34;SHIP&#34;
+     1: &#34;MAIL&#34;
+     2: &#34;AIR&#34;
+     3: &#34;REG AIR&#34;
+     4: &#34;TRUCK&#34;
+     5: &#34;RAIL&#34;
+     6: &#34;FOB&#34;
+
+Row group 1 dictionary for &#34;shipmode&#34;:
+     0: &#34;SHIP&#34;
+...
+</code></pre><p>You can see the values for the dictionary are the column values. Since this
+is a very low cardinality column, there are only 7 distinct values.</p><h1 id=individual-pages>Individual pages</h1><p>We can also use the <code>parquet-cli</code> to view metadata for pages in a
+parquet file:</p><pre tabindex=0><code>parquet-cli pages &lt;path-to-parquet-file&gt;
+</code></pre><p>This command will show metadata for every page on a per column basis. Each page
+identifier has a particular format:</p><pre tabindex=0><code>&lt;row_group_number&gt;-&lt;page_number&gt;
+</code></pre><p>For a dictionary page, the <code>&lt;page_number></code> will be <code>D</code>.</p><p>For example, here is some of the output of the command for the <code>orderkey</code> column
+we have looked at before:</p><pre tabindex=0><code>Column: orderkey
+--------------------------------------------------------------------------------
+  page   type  enc  count   avg size   size       rows     nulls   min / max
+  0-D    dict  Z _  129990  8.00 B     1015.547 kB
+  0-1    data  Z R  20000   1.63 B     31.786 kB
+  0-2    data  Z R  20000   1.75 B     34.228 kB
+...
+  1-D    dict  Z _  130108  8.00 B     1016.469 kB
+  1-1    data  Z R  20000   1.63 B     31.786 kB
+  1-2    data  Z R  20000   1.75 B     34.228 kB
+...
+  2-D    dict  Z _  130244  8.00 B     1017.531 kB
+  2-1    data  Z R  20000   1.63 B     31.786 kB
+  2-2    data  Z R  20000   1.75 B     34.228 kB
+...
+  3-D    dict  Z _  129755  8.00 B     1013.711 kB
+  3-1    data  Z R  20000   1.63 B     31.786 kB
+  3-2    data  Z R  20000   1.75 B     34.228 kB
+...
+</code></pre><p>So the majority of the pages are data pages. 1 page in each row group for
+this column is a dictionary page as indicated by the <code>type</code> field and the
+prefix in the page identifier.</p><p>Next, there is information on the encoding for each page. This can be read in
+a similar way to the encoding for the row group metadata.</p><p>The first character is always the compression codec and the second character is
+then the encoding of the actual page.</p><p>So for example <code>Z _</code> is a ZSTD compressed page with a plain encoding and <code>Z R</code> is
+a ZSTD compressed page with a RLE dictionary encoding.</p><p>Next, for each page it shows you the record count in that page following by the
+average size of each record. Then it tells you the total size of the page.</p><p>Notice that the dictionary pages will always be correspond to the parquet dictionary
+size which is controlled when writing by the <code>parquet.dictionary.page.size</code> property.
+The default dictionary page size is 1MB which was used when generating these parquet
+files.</p><h1 id=column-indexes>Column indexes</h1><p>Another part of a parquet file that is of interest is the <a href=https://github.com/apache/parquet-format/blob/master/PageIndex.md>column indexes</a>.</p><p>Column indexes track min/max statistics for each data page. This can be
+leveraged to skip individual data pages for a column in a row group. It is
+essentially the same as row group min/max filtering but just at a finer
+granularity.</p><p>To view information on column indexes, we issue:</p><pre tabindex=0><code>parquet-cli column-index &lt;path-to-parquet-file&gt;
+</code></pre><p>This will output the column indexes for each column per row group. It will
+show you the min/max and null count for each column index.</p><p>Here is some example output for our <code>orderkey</code> column:</p><pre tabindex=0><code>row-group 0:
+column index for column orderkey:
+Boundary order: UNORDERED
+                      null count  min                                       max
+page-0                         0  4500010215                                5142863968
+page-1                         0  4500013217                                5035735234
+page-2                         0  4502151685                                4930893862
+...
+row-group 1:
+column index for column orderkey:
+Boundary order: UNORDERED
+                      null count  min                                       max
+page-0                         0  4501938144                                5144928130
+page-1                         0  4501945031                                5144938595
+page-2                         0  4716204005                                5144942022
+...
+row-group 2:
+column index for column orderkey:
+Boundary order: UNORDERED
+                      null count  min                                       max
+page-0                         0  4524740420                                5166273987
+page-1                         0  4523117509                                5059623457
+page-2                         0  4630680775                                5166280994
+...
+row-group 3:
+column index for column orderkey:
+Boundary order: UNORDERED
+                      null count  min                                       max
+page-0                         0  4633395622                                5169011457
+page-1                         0  4525823204                                5169018245
+page-2                         0  4525829984                                5062322054
+</code></pre><p>This can be useful to know whether or not column indexes will be useful for min/max
+skipping. In this example, we can see each index has a small range of min/max values
+so we would expect column indexes to be useful for predicates on this column.</p><p>For an example where this is not the case:</p><pre tabindex=0><code>column index for column partkey:
+Boundary order: UNORDERED
+                      null count  min                                       max
+page-0                         0  8850                                      199995958
+page-1                         0  37233                                     199996089
+page-2                         0  2830                                      199982784
+page-3                         0  19052                                     199995316
+</code></pre><p>Notice the min/max range for each column index here is quite large so we would
+not expect column indexes to be very useful for predicates on this column.</p><h1 id=summary>Summary</h1><p>This post was mostly for myself to reference in the future when I need to
+parse output of the parquet CLI. Hopefully it may prove useful to someone!</p></section><nav class=post-nav><a class=next href=https://posulliv.github.io/posts/hive-caching-options/><span>Caching options in Trino's Hive connector</span><span>→</span></a></nav></article></main><footer class=footer><p>&copy; 2022 <a href=https://posulliv.github.io/>Home</a></p><p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p><p><a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a></p></footer></body></html>
