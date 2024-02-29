@@ -7,3 +7,4 @@ googleAnalytics = 'G-RB870JF93J'
 [params]
   github = 'posulliv'
   twitter = 'posulliv'
+  rss = false
