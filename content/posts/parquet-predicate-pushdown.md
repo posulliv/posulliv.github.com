@@ -4,7 +4,7 @@ date: 2024-02-27T08:21:42-05:00
 draft: false
 ---
 
-> All examples in this page were run on [Starburst Galaxy](https://galaxy.starburst.io/) with clusters based on trino 432.
+> All examples in this article were run on [Starburst Galaxy](https://galaxy.starburst.io/) with clusters based on trino 432.
 
 # Overview
 
