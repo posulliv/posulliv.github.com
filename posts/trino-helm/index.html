@@ -1,0 +1,450 @@
+<!doctype html><html lang=en-us>
+<head>
+<meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+<title>Deploying Trino on Google Cloud with helm - Home</title>
+<meta name=description content="This article was written using version 0.8.0 of the Trino community helm charts and version 1.21.9-gke.1002 of Kubernetes.
+ In this article, we are going to walk through deploying Trino with the community helm charts on the Google Cloud Platform.
+This article assumes you already have a Kubernetes cluster created in Google Cloud and have a connection to it configured for kubectl.
+We&rsquo;ll start with a simple bare bones deployment and progress from there.">
+<meta name=author content>
+<link rel="preload stylesheet" as=style href=https://posulliv.github.io/app.min.css>
+<link rel="preload stylesheet" as=style href=https://posulliv.github.io/an-old-hope.min.css>
+<script defer src=https://posulliv.github.io/highlight.min.js onload=hljs.initHighlightingOnLoad()></script>
+<link rel=preload as=image href=https://posulliv.github.io/theme.png>
+<link rel=preload as=image href=https://posulliv.github.io/twitter.svg>
+<link rel=preload as=image href=https://posulliv.github.io/github.svg>
+<link rel=icon href=https://posulliv.github.io/favicon.ico>
+<link rel=apple-touch-icon href=https://posulliv.github.io/apple-touch-icon.png>
+<meta name=generator content="Hugo 0.92.1">
+<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','G-RB870JF93J','auto'),ga('send','pageview'))</script>
+<script async src=https://www.google-analytics.com/analytics.js></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','G-RB870JF93J',{anonymize_ip:!1})}</script>
+<meta property="og:title" content="Deploying Trino on Google Cloud with helm">
+<meta property="og:description" content="This article was written using version 0.8.0 of the Trino community helm charts and version 1.21.9-gke.1002 of Kubernetes.
+ In this article, we are going to walk through deploying Trino with the community helm charts on the Google Cloud Platform.
+This article assumes you already have a Kubernetes cluster created in Google Cloud and have a connection to it configured for kubectl.
+We&rsquo;ll start with a simple bare bones deployment and progress from there.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://posulliv.github.io/posts/trino-helm/"><meta property="article:section" content="posts">
+<meta property="article:published_time" content="2022-04-04T08:07:29-04:00">
+<meta property="article:modified_time" content="2022-04-04T08:07:29-04:00">
+<meta itemprop=name content="Deploying Trino on Google Cloud with helm">
+<meta itemprop=description content="This article was written using version 0.8.0 of the Trino community helm charts and version 1.21.9-gke.1002 of Kubernetes.
+ In this article, we are going to walk through deploying Trino with the community helm charts on the Google Cloud Platform.
+This article assumes you already have a Kubernetes cluster created in Google Cloud and have a connection to it configured for kubectl.
+We&rsquo;ll start with a simple bare bones deployment and progress from there."><meta itemprop=datePublished content="2022-04-04T08:07:29-04:00">
+<meta itemprop=dateModified content="2022-04-04T08:07:29-04:00">
+<meta itemprop=wordCount content="1860">
+<meta itemprop=keywords content>
+<meta name=twitter:card content="summary">
+<meta name=twitter:title content="Deploying Trino on Google Cloud with helm">
+<meta name=twitter:description content="This article was written using version 0.8.0 of the Trino community helm charts and version 1.21.9-gke.1002 of Kubernetes.
+ In this article, we are going to walk through deploying Trino with the community helm charts on the Google Cloud Platform.
+This article assumes you already have a Kubernetes cluster created in Google Cloud and have a connection to it configured for kubectl.
+We&rsquo;ll start with a simple bare bones deployment and progress from there.">
+</head>
+<body class=not-ready data-menu=false>
+<head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-RB870JF93J"></script>
+<script>var doNotTrack=!1;if(!doNotTrack){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date),gtag('config','G-RB870JF93J',{anonymize_ip:!1})}</script>
+<script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','G-RB870JF93J','auto'),ga('send','pageview'))</script>
+<script async src=https://www.google-analytics.com/analytics.js></script>
+</head>
+<header class=header>
+<p class=logo>
+<a class=site-name href=https://posulliv.github.io/>Home</a><a class=btn-dark></a>
+</p>
+<script>let bodyClx=document.body.classList,btnDark=document.querySelector('.btn-dark'),sysDark=window.matchMedia('(prefers-color-scheme: dark)'),darkVal=localStorage.getItem('dark'),setDark=a=>{bodyClx[a?'add':'remove']('dark'),localStorage.setItem('dark',a?'yes':'no')};setDark(darkVal?darkVal==='yes':sysDark.matches),requestAnimationFrame(()=>bodyClx.remove('not-ready')),btnDark.addEventListener('click',()=>setDark(!bodyClx.contains('dark'))),sysDark.addEventListener('change',a=>setDark(a.matches))</script>
+<nav class=social>
+<a class=twitter style=--url:url(./twitter.svg) href=https://twitter.com/posulliv target=_blank></a>
+<a class=github style=--url:url(./github.svg) href=https://github.com/posulliv target=_blank></a>
+</nav>
+</header>
+<main class=main>
+<article class=post-single>
+<header class=post-title>
+<p>
+<time>Apr 4, 2022</time>
+</p>
+<h1>Deploying Trino on Google Cloud with helm</h1>
+</header>
+<section class=post-content><blockquote>
+<p>This article was written using version 0.8.0 of the Trino community
+helm charts and version 1.21.9-gke.1002 of Kubernetes.</p>
+</blockquote>
+<p>In this article, we are going to walk through deploying Trino with the
+<a href=https://github.com/trinodb/charts>community helm charts</a> on the
+Google Cloud Platform.</p>
+<p>This article assumes you already have a Kubernetes cluster created in Google
+Cloud and have a connection to it configured for <code>kubectl</code>.</p>
+<p>We&rsquo;ll start with a simple bare bones deployment and progress from there.</p>
+<p>First, we need to add the helm repository for the Trino community charts.</p>
+<pre tabindex=0><code>helm repo add trino https://trinodb.github.io/charts/
+helm repo update
+</code></pre><p>Now that we have the chart repository added, we can get started.</p>
+<h1 id=simple-cluster-with-defaults>Simple cluster with defaults</h1>
+<p>Let&rsquo;s start wit the simplest possible deployment. We will use mostly
+the default values for the Trino chart.</p>
+<p>The main things we will change are the environment name and how the cluster
+is exposed. We will expose the cluster with a <code>LoadBalancer</code> for now just
+for this article for simple testing.</p>
+<p>Our custom value will be stored in a <code>trino.yaml</code> file. For our first example,
+our <code>trino.yaml</code> file will have the following contents:</p>
+<pre tabindex=0><code>server:
+  node:
+    environment: test
+
+service:
+  type: LoadBalancer
+</code></pre><p>Now, lets deploy this cluster with <code>helm</code>:</p>
+<pre tabindex=0><code>helm install trino trino/trino --version 0.8.0 --values trino.yaml
+</code></pre><p>This will create a Trino cluster with 1 coordinator and 2 workers. We can
+verify this by looking at the pods that have been deployed:</p>
+<pre tabindex=0><code>$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+trino-coordinator-5dbcff8f8f-2g7b9   1/1     Running   0          51s
+trino-worker-7cdd97b6c-kd26h         1/1     Running   0          51s
+trino-worker-7cdd97b6c-vmhrf         1/1     Running   0          51s
+$
+</code></pre><p>Next, we&rsquo;ll verify a <code>LoadBalancer</code> has been created with an external IP:</p>
+<pre tabindex=0><code>$ kubectl get svc trino
+NAME    TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+trino   LoadBalancer   10.81.96.139   34.148.83.2   8080:32764/TCP   87s
+$
+</code></pre><p>Now that a <code>LoadBalancer</code> has been created with an external IP, we can connect
+with the Trino CLI and run a query:</p>
+<pre tabindex=0><code>$ trino --server http://34.148.83.2:8080 --user padraig
+trino&gt; select * from system.runtime.nodes;
+              node_id               |        http_uri        | node_version | coordinator | state
+------------------------------------+------------------------+--------------+-------------+--------
+ trino-coordinator-5dbcff8f8f-2g7b9 | http://10.84.1.25:8080 | 375          | true        | active
+ trino-worker-7cdd97b6c-vmhrf       | http://10.84.1.24:8080 | 375          | false       | active
+ trino-worker-7cdd97b6c-kd26h       | http://10.84.2.13:8080 | 375          | false       | active
+(3 rows)
+
+Query 20220401_012800_00000_2numb, FINISHED, 2 nodes
+Splits: 2 total, 2 done (100.00%)
+2.56 [3 rows, 186B] [1 rows/s, 73B/s]
+
+trino&gt;
+</code></pre><p>This shows all the nodes in our cluster.</p>
+<h1 id=add-a-mysql-catalog>Add a MySQL catalog</h1>
+<p>Next, let&rsquo;s add a new MySQL catalog to our Trino cluster.</p>
+<p>First, we&rsquo;ll deploy an ephermal MySQL service that we can use in our cluster.</p>
+<pre tabindex=0><code>helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+</code></pre><p>The <code>mysql.yaml</code> file I&rsquo;m using with custom values looks like:</p>
+<pre tabindex=0><code>auth:
+  database: trino
+  rootPassword: root
+</code></pre><p>We deploy MySQL with <code>helm</code>:</p>
+<pre tabindex=0><code>helm install mysql bitnami/mysql --values mysql.yaml
+</code></pre><p>This will deploy a MySQL server and create a schema named <code>trino</code>. It will
+also set the password for the <code>root</code> user to <code>root</code>.</p>
+<p>Now, we will update our <code>trino.yaml</code> to add a new catalog for connecting to
+this MySQL database.</p>
+<pre tabindex=0><code>server:
+  node:
+    environment: test
+
+additionalCatalogs:
+  mysql: |
+    connector.name=mysql
+    connection-url=jdbc:mysql://mysql:3306/
+    connection-user=root
+    connection-password=root
+
+service:
+  type: LoadBalancer
+</code></pre><p>Now, we can update our Trino deployment with <code>helm</code>:</p>
+<pre tabindex=0><code>helm upgrade trino trino/trino --install --version 0.8.0 --values trino.yaml
+kubectl rollout restart deployment trino-coordinator
+kubectl rollout restart deployment trino-worker
+</code></pre><p>Notice we need to restart all the pods for the configuration to become
+immediately effective. There is work in progress in the Trino charts to
+automatically restart the pods in this scenario and avoid the need for the
+additional <code>kubectl rollout restart</code> command.</p>
+<p>Once the Trino pods are restarted, try connecting to Trino with the CLI and
+verify the MySQL catalog is present with a schema named <code>trino</code>.</p>
+<pre tabindex=0><code>$ trino --server http://34.148.83.2:8080 --user padraig
+trino&gt; show schemas in mysql;
+       Schema
+--------------------
+ trino
+ information_schema
+ performance_schema
+(3 rows)
+
+Query 20220401_014443_00004_typwa, FINISHED, 3 nodes
+Splits: 6 total, 6 done (100.00%)
+0.38 [3 rows, 58B] [7 rows/s, 153B/s]
+
+trino&gt;
+</code></pre><h1 id=enable-autoscaling>Enable autoscaling</h1>
+<p>Lets now enable autoscaling for our Trino cluster to add workers when necessary.
+The only metric that can be used for autoscaling at the moment is CPU utilization.</p>
+<p>To enable autoscaling, our <code>trino.yaml</code> file will now look like:</p>
+<pre tabindex=0><code>server:
+  node:
+    environment: test
+  autoscaling:
+    enabled: true
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 15
+
+additionalCatalogs:
+  mysql: |
+    connector.name=mysql
+    connection-url=jdbc:mysql://mysql:3306/
+    connection-user=root
+    connection-password=root
+
+service:
+  type: LoadBalancer
+</code></pre><p>The default target CPU utilization is 50% so I set it to 15% to have auto
+scaling kick in quickly for demo purposes.</p>
+<p>Now, lets redeploy Trino:</p>
+<pre tabindex=0><code>helm upgrade trino trino/trino --install --version 0.8.0 --values trino.yaml
+kubectl rollout restart deployment trino-coordinator
+kubectl rollout restart deployment trino-worker
+</code></pre><p>Ad again, verify there are 2 worker pods initially.</p>
+<pre tabindex=0><code>$ kubectl get pods
+NAME                                 READY   STATUS    RESTARTS   AGE
+mysql-0                              1/1     Running   0          28m
+trino-coordinator-5dbcff8f8f-4mk6g   1/1     Running   0          32s
+trino-worker-7cdd97b6c-jcrgr         1/1     Running   0          32s
+trino-worker-7cdd97b6c-ls8tc         1/1     Running   0          32s
+$
+</code></pre><p>Now, lets kick off some CPU intensive queries in parallel. For example, kick
+this query off a few times in parallel:</p>
+<pre tabindex=0><code>select sum(quantity) from tpch.sf100000.lineitem;
+</code></pre><p>While you have 4 or 5 of these CPU intensive queries running in parallel,
+monitor the number of worker pods and you will see auto scaling kick in:</p>
+<pre tabindex=0><code>NAME                                 READY   STATUS    RESTARTS   AGE
+mysql-0                              1/1     Running   0          31m
+trino-coordinator-5dbcff8f8f-4mk6g   1/1     Running   0          3m22s
+trino-worker-7cdd97b6c-j5wg6         0/1     Running   0          6s
+trino-worker-7cdd97b6c-jcrgr         1/1     Running   0          3m22s
+trino-worker-7cdd97b6c-ls8tc         1/1     Running   0          3m22s
+</code></pre><p>Notice the <code>trino-worker-7cdd97b6c-j5wg6</code> worker pod that is starting up now.</p>
+<p>Once the worker pod becomes ready, you will see the number of workers in the
+Trino web UI increase.</p>
+<h1 id=change-jvm-configs>Change JVM configs</h1>
+<p>So far, we have not been setting the max heap size for the JVM on either the
+workers or the coordinator. Let&rsquo;s say we want to specify what the max heap
+size for JVM should be.</p>
+<p>This is possible by updating our <code>trino.yaml</code> file to look like:</p>
+<pre tabindex=0><code>server:
+  node:
+    environment: test
+  autoscaling:
+    enabled: true
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 15
+
+coordinator:
+  jvm:
+    maxHeapSize: &quot;12G&quot;
+
+worker:
+  jvm:
+    maxHeapSize: &quot;12G&quot;
+
+additionalCatalogs:
+  mysql: |
+    connector.name=mysql
+    connection-url=jdbc:mysql://mysql:3306/
+    connection-user=root
+    connection-password=root
+
+service:
+  type: LoadBalancer
+</code></pre><p>Notice that the workers and coordinator can have different JVM heap sizes
+if we wished. Now let&rsquo;s redeploy Trino:</p>
+<pre tabindex=0><code>helm upgrade trino trino/trino --install --version 0.8.0 --values trino.yaml
+kubectl rollout restart deployment trino-coordinator
+kubectl rollout restart deployment trino-worker
+</code></pre><p>To verify the memory on the pods, we can use <code>jcmd</code>:</p>
+<pre tabindex=0><code>$ kubectl exec -it trino-coordinator-57bf54b59-rb5xs -- /bin/bash -c &quot;jcmd 1 VM.flags&quot;
+-XX:CICompilerCount=2 -XX:ConcGCThreads=1 -XX:+ExitOnOutOfMemoryError -XX:+ExplicitGCInvokesConcurrent -XX:G1ConcRefinementThreads=1 -XX:G1HeapRegionSize=33554432 -XX:GCDrainStackTargetSize=64 -XX:+HeapDumpOnOutOfMemoryError -XX:InitialHeapSize=67108864 -XX:MarkStackSize=4194304 -XX:MaxHeapSize=12884901888 -XX:MaxNewSize=7717519360 -XX:MinHeapDeltaBytes=33554432 -XX:NonNMethodCodeHeapSize=5825164 -XX:NonProfiledCodeHeapSize=265522874 -XX:PerBytecodeRecompilationCutoff=10000 -XX:PerMethodRecompilationCutoff=10000 -XX:ProfiledCodeHeapSize=265522874 -XX:ReservedCodeCacheSize=536870912 -XX:+SegmentedCodeCache -XX:-UseBiasedLocking -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseFastUnorderedTimeStamps -XX:+UseG1GC -XX:+UseGCOverheadLimit
+$
+</code></pre><p>Notice <code>-XX:MaxHeapSize=12884901888</code> corresponds to the value I specified in my
+YAML file.</p>
+<h1 id=tls-termination-and-authentication>TLS termination and authentication</h1>
+<p>Finally, we want to enable TLS and password authentication for out Trino
+cluster. We will use <a href=https://trino.io/docs/current/security/password-file.html>file based password authentiation</a>.</p>
+<p>We need to update our Trino config to enable <code>PASSWORD</code> based authentication.
+For file based authentication, the helm chart allows us to enter a list of
+username and passwords that will automatically get placed in a <code>password.db</code>
+file on the coordinator pod.</p>
+<p>The password must be in one of the formats <a href=https://trino.io/docs/current/security/password-file.html#file-format>outlined in the Trino docs</a>. For this example, I am going to use bcrypt format
+and I&rsquo;m going to add a username/password entry for bob/bob.</p>
+<p>We are also going to stop exposing the cluster with a <code>LoadBalancer</code> and instead
+expose it using the default method of <code>ClusterIP</code>.</p>
+<p>As we are going to be doing TLS termination, we need set 1 additional config
+property in the coordinator - <code>http-server.process-forwarded</code>.</p>
+<p>With all that said, our <code>trino.yaml</code> file will look like the following:</p>
+<pre tabindex=0><code>server:
+  node:
+    environment: test
+  config:
+    authenticationType: &quot;PASSWORD&quot;
+  autoscaling:
+    enabled: true
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 15
+  coordinatorExtraConfig:
+    http-server.process-forwarded=true
+
+auth:
+  passwordAuth: &quot;bob:$2y$10$5bJMqeHSHUa/zh1GNJNJhOUuaOL/kF5clDgKz9s.cNlHrHIL8U/HW&quot;
+
+coordinator:
+  jvm:
+    maxHeapSize: &quot;12G&quot;
+
+worker:
+  jvm:
+    maxHeapSize: &quot;12G&quot;
+
+additionalCatalogs:
+  mysql: |
+    connector.name=mysql
+    connection-url=jdbc:mysql://mysql:3306/
+    connection-user=root
+    connection-password=root
+</code></pre><p>Redeploy our Trino cluster:</p>
+<pre tabindex=0><code>helm upgrade trino trino/trino --install --version 0.8.0 --values trino.yaml
+kubectl rollout restart deployment trino-coordinator
+kubectl rollout restart deployment trino-worker
+</code></pre><p>The services on our Kubernetes cluster will now look like:</p>
+<pre tabindex=0><code>$ kubectl get service
+NAME             TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)    AGE
+kubernetes       ClusterIP   10.81.96.1     &lt;none&gt;        443/TCP    4d2h
+mysql            ClusterIP   10.81.96.189   &lt;none&gt;        3306/TCP   3d
+mysql-headless   ClusterIP   None           &lt;none&gt;        3306/TCP   3d
+trino            ClusterIP   10.81.96.179   &lt;none&gt;        8080/TCP   2d
+$
+</code></pre><p>Now to expose the cluster and configure TLS termination, we are going to
+manually create an Ingress.</p>
+<p>First, we will create a static IP and configure a DNS A record. Since this
+article is for the Google Cloud platform, the way we create a static IP is:</p>
+<pre tabindex=0><code>gcloud compute addresses describe trino-static-ip --global
+</code></pre><p>Once the static IP is ready, we configure a DNS A record with this IP.</p>
+<p>We are going to use <a href=https://cloud.google.com/load-balancing/docs/ssl-certificates/google-managed-certs>Google Managed certificates</a>
+for enabling TLS to this cluster.</p>
+<p>The first thing we need to do is create a managed certificate with the DNS
+record we configured for the static IP we created. We will place the
+following in a <code>managed-cert.yaml</code> file:</p>
+<pre tabindex=0><code>apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: trino-managed-cert
+spec:
+  domains:
+    - trino-gateway.starburst-customer-success.com
+</code></pre><p>And we will deploy it with <code>kubectl</code>:</p>
+<pre tabindex=0><code>kubectl apply -f managed-cert.yaml
+</code></pre><p>It can take up to 60 minutes to provision a managed certificate on the
+Google Cloud Platform. Once it is provisioned, it should show a status of
+<code>Active</code>:</p>
+<pre tabindex=0><code>$ kubectl get managedcertificate
+NAME           AGE   STATUS
+managed-cert   47h   Active
+$
+</code></pre><p>Now we are ready to create an Ingress. We will put the following in an
+<code>ingress.yaml</code> file:</p>
+<pre tabindex=0><code>apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trino-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: &quot;trino-static-ip&quot;
+    networking.gke.io/managed-certificates: managed-cert
+    kubernetes.io/ingress.class: &quot;gce&quot;
+spec:
+  defaultBackend:
+    service:
+      name: trino
+      port:
+        number: 8080
+</code></pre><p>Notice we reference the managed certificate and static IP we created earlier.</p>
+<p>Now deploy the Ingress:</p>
+<pre tabindex=0><code>kubectl apply -f ingress.yaml
+</code></pre><p>After the Ingress has an external IP allocated, navigate to the web UI at
+the hostname we configured our DNS record for.</p>
+<p><img src=/img/trino_ui_cert.png alt="Trino web UI"></p>
+<p>We can also now connect with a username and password with the Trino CLI:</p>
+<pre tabindex=0><code>$ trino --server https://trino-gateway.starburst-customer-success.com --user bob --password
+Password:
+trino&gt; show catalogs;
+ Catalog
+---------
+ mysql
+ system
+ tpcds
+ tpch
+(4 rows)
+
+Query 20220402_021515_00000_qhent, FINISHED, 2 nodes
+Splits: 6 total, 6 done (100.00%)
+4.03 [0 rows, 0B] [0 rows/s, 0B/s]
+
+trino&gt;
+</code></pre><h2 id=troubleshooting>Troubleshooting</h2>
+<p>If you are unable to connect to the Trino cluster through the Ingress you
+configured, you should look at whether the Ingress thinks the backend
+Trino service is healthy or not.</p>
+<p>You want to see something like this in the output of
+<code>kubectl describe ingress trino-ingress</code>:</p>
+<pre tabindex=0><code>  Host        Path  Backends
+  ----        ----  --------
+  *           *     trino:8080 (10.84.1.48:8080)
+Annotations:  ingress.gcp.kubernetes.io/pre-shared-cert: mcrt-a18fe6f3-77de-4e3f-b1da-5a4dff917a1b
+              ingress.kubernetes.io/backends: {&quot;k8s1-a536ee33-default-trino-8080-1f12238e&quot;:&quot;HEALTHY&quot;}
+</code></pre><p>If the backend Trino service is <code>UNKNOWN</code> or not <code>HEALTHY</code>, then we need to
+create a custom health check for the Trino service. This can be done by putting
+the following in a <code>trino_gc_config.yaml</code> file:</p>
+<pre tabindex=0><code>apiVersion: cloud.google.com/v1beta1
+kind: BackendConfig
+metadata:
+  name: trino-hc-config
+spec:
+  healthCheck:
+    checkIntervalSec: 15
+    port: 8080
+    type: HTTP
+    requestPath: /v1/status
+</code></pre><p>Now deploy the custom health check config:</p>
+<pre tabindex=0><code>kubectl apply -f trino_hc_config.yaml
+</code></pre><p>And finally, annotate the Trino service with the custom health check we
+just created:</p>
+<pre tabindex=0><code>kubectl annotate svc trino cloud.google.com/backend-config='{&quot;default&quot;: &quot;trino-hc-config&quot;}'
+</code></pre><p>The above is specific to the Google Cloud Platform.</p>
+<h1 id=conclusion>Conclusion</h1>
+<p>We covered a few different configurations that can be configured with the
+Trino community helm charts.</p>
+<p>Many more are planned or in progress in the helm charts such as Ingress support
+in the helm charts and access control.</p>
+<p>If anyone has any questions or would like to see more examples, please feel
+free to reach out to me on the Trino <a href=https://trino.io/slack.html>community slack</a>
+or message me on <a href=https://twitter.com/posulliv>twitter</a>.</p>
+</section>
+<nav class=post-nav>
+<a class=prev href=https://posulliv.github.io/posts/lyft-gateway-helm/><span>←</span><span>Deploying Lyft's Presto Gateway on Google Cloud with helm</span></a>
+<a class=next href=https://posulliv.github.io/posts/orc-bloom-filters/><span>ORC bloom filters in Trino</span><span>→</span></a>
+</nav>
+</article>
+</main>
+<footer class=footer>
+<p>&copy; 2024 <a href=https://posulliv.github.io/>Home</a></p>
+<p>Powered by <a href=https://gohugo.io/ rel=noopener target=_blank>Hugo️️</a>️</p>
+<p>
+<a href=https://github.com/nanxiaobei/hugo-paper rel=noopener target=_blank>Paper 5.1</a>
+</p>
+</footer>
+</body>
+</html>
